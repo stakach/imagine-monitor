@@ -3,11 +3,11 @@
 This is the primary detection service for imagine.
 
 ```mermaid
-graph TD;
-    H264 Broadcast-->Imagine Monitor;
-    Imagine Monitor-->Video Stream;
-    Imagine Monitor-->Detections;
-    Nginx Webserver-->Imagine Monitor
+flowchart TD
+    V>H264 Broadcast] --> I[[Imagine Service]]
+    I --> V[Video Stream Websocket]
+    I --> D[Detections Websocket]
+    N{{NGINX Webserver}} ----> I
 ```
 
 ### Deploying
