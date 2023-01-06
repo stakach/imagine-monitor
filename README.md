@@ -4,7 +4,7 @@ This is the primary detection service for imagine.
 
 ```mermaid
 flowchart TD
-    V>H264 Broadcast] --> I[[Imagine Service]]
+    B>H264 Broadcast] --> I[[Imagine Service]]
     I --> V[Video Stream Websocket]
     I --> D[Detections Websocket]
     N{{NGINX Webserver}} ----> I
