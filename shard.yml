@@ -1,11 +1,16 @@
-name: spider-gazelle
-version: 2.0.0
+name: imagine-monitor
+version: 0.1.0
 
 dependencies:
   # The server framework
   action-controller:
     github: spider-gazelle/action-controller
     version: ~> 5.5
+
+  # The AI video parser
+  imagine:
+    github: stakach/imagine
+    branch: master
 
 development_dependencies:
   ameba:
@@ -15,5 +20,5 @@ development_dependencies:
 
 # compile target
 targets:
-  app:
+  monitor:
     main: src/app.cr
