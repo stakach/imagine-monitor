@@ -7,8 +7,8 @@ flowchart TD
     B>H264 Broadcast] --> I[[Imagine Service]]
     I --> V[Video Stream Websocket]
     I --> D[Detections Websocket]
-    N{{NGINX Webserver}} ----> V
-    N ----> D
+    V --> N{{NGINX Webserver}}
+    D --> N
     U((Web browser)) --> N
 ```
 
