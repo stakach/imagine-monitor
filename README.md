@@ -9,7 +9,7 @@ flowchart TD
     I --> D[Detections Websocket]
     V --> N{{NGINX Webserver}}
     D --> N
-    U((Web browser)) --> N
+    U((Web browser / User)) --> N
 ```
 
 ### Deploying
