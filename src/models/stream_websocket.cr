@@ -24,25 +24,28 @@ class StreamWebsocket
 
   protected def start_stream
     io = UDPSocket.new
-    io.read_timeout = 2.seconds
-    io.bind "0.0.0.0", multicast_address.port
-    io.join_group(multicast_address)
+    begin
+      io.read_timeout = 2.seconds
+      io.bind "0.0.0.0", multicast_address.port
+      io.join_group(multicast_address)
 
-    # largest packets seem to be 4096 * 15
-    bytes = Bytes.new(4096 * 20)
+      # largest packets seem to be 4096 * 15
+      bytes = Bytes.new(4096 * 20)
 
-    loop do
-      break if closed? || io.closed?
-      bytes_read, _client_addr = io.receive(bytes)
-      break if bytes_read == 0
+      loop do
+        break if closed? || io.closed?
+        bytes_read, _client_addr = io.receive(bytes)
+        break if bytes_read == 0
 
-      publish bytes[0, bytes_read].dup
-    end
-  rescue error
-    Log.warn(exception: error) { "error reading multicast stream" }
-    if !closed?
-      sleep 1
-      spawn { start_stream }
+        publish bytes[0, bytes_read].dup
+      end
+    rescue error
+      Log.warn(exception: error) { "error reading multicast stream" }
+      io.close
+      if !closed?
+        sleep 1
+        spawn { start_stream }
+      end
     end
   end
 

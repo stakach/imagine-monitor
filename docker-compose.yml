@@ -18,7 +18,7 @@ services:
       - models:/models
     environment:
       SG_ENV: "development"
-      ENABLE_STREAMING: "yes"
+      ENABLE_STREAMING: "true"
       ENABLE_DETECTOR: "false"
       MODEL_PATH: "/models/mobilenet_v1.tflite"
       MULTICAST_ADDRESS: "224.1.1.1"
