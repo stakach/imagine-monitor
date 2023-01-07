@@ -15,3 +15,8 @@ flowchart TD
 ### Deploying
 
 You can build an image using `docker build .`
+
+
+#### Multi-arch images
+
+docker buildx build --progress=plain --platform linux/arm64,linux/amd64 -t vontakach/imagine:latest --push .

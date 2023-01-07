@@ -23,23 +23,43 @@ RUN apt update && apt install -y \
     cmake \
     linux-headers-generic \
     git \
+    wget \
     python3 \
     libavcodec-dev \
     libavformat-dev \
     libavutil-dev \
     libswscale-dev \
-    ca-certificates
+    ca-certificates \
+    opencl-headers \
+    libopencv-core-dev \
+    clang-format-9
 
 # Install shards for caching
 COPY shard.yml shard.yml
 COPY shard.override.yml shard.override.yml
 COPY shard.lock shard.lock
 
-RUN shards install --production --ignore-crystal-version --skip-executables
+RUN shards install --production --ignore-crystal-version --skip-postinstall --skip-executables
+
+# Compile Tensorflow lite and put it in place
+RUN git clone --depth 1 https://github.com/tensorflow/tensorflow
+RUN mkdir tfbuild
+WORKDIR /app/tfbuild
+RUN cmake ../tensorflow/tensorflow/lite/c -DTFLITE_ENABLE_GPU=ON
+RUN cmake --build . -j2 || true
+RUN echo "---------- WE ARE BUILDING AGAIN!! ----------"
+RUN cmake --build . -j1
+RUN mkdir -p ../lib/tensorflow_lite/ext
+RUN mkdir -p ../bin
+RUN cp ./libtensorflowlite_c.so ../lib/tensorflow_lite/ext/
+RUN cp ./libtensorflowlite_c.so ../bin/
+
+WORKDIR /app
 COPY ./src /app/src
 
 # Build application
-RUN shards build --production --release --error-trace
+# RUN shards build --production --release --error-trace
+RUN shards build --production --error-trace
 
 # Extract binary dependencies (uncomment if not compiling a static build)
 RUN for binary in /app/bin/*; do \
@@ -71,7 +91,7 @@ COPY --from=build /usr/share/zoneinfo/ /usr/share/zoneinfo/
 
 # This is your application
 COPY --from=build /app/deps /
-COPY --from=build /app/bin /
+COPY --from=build /app/bin /app/bin
 
 # Copy the docs into the container, you can serve this file in your app
 COPY --from=build /app/openapi.yml /openapi.yml
@@ -80,9 +100,9 @@ COPY --from=build /app/openapi.yml /openapi.yml
 USER appuser:appuser
 
 # Spider-gazelle has a built in helper for health checks (change this as desired for your applications)
-HEALTHCHECK CMD ["/monitor", "-c", "http://127.0.0.1:3000/"]
+HEALTHCHECK CMD ["/app/bin/monitor", "-c", "http://127.0.0.1:3000/"]
 
 # Run the app binding on port 3000
 EXPOSE 3000
-ENTRYPOINT ["/monitor"]
-CMD ["/monitor", "-b", "0.0.0.0", "-p", "3000"]
+ENTRYPOINT ["/app/bin/monitor"]
+CMD ["/app/bin/monitor", "-b", "0.0.0.0", "-p", "3000"]

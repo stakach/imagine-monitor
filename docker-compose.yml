@@ -1,11 +1,25 @@
 version: '3'
+
+volumes:
+  models:
+
 services:
   # The Spider-Gazelle service
   # run: `docker-compose build` to update the service
   # run: `docker-compose up -d` to launch the service
-  sg:
+  imagine:
     build: .
+    container_name: imagine
+    hostname: imagine
+    restart: always
     ports:
       - "3000:3000"
+    volumes:
+      - models:/models
     environment:
-      SG_ENV: "production"
+      SG_ENV: "development"
+      ENABLE_STREAMING: "yes"
+      ENABLE_DETECTOR: "false"
+      MODEL_PATH: "/models/mobilenet_v1.tflite"
+      MULTICAST_ADDRESS: "224.1.1.1"
+      MULTICAST_PORT: "8554"
