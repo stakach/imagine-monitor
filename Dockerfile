@@ -72,6 +72,7 @@ RUN for binary in /app/bin/*; do \
 # Generate OpenAPI docs while we still have source code access
 RUN ./bin/monitor --docs --file=openapi.yml
 RUN update-ca-certificates
+RUN mkdir ./models
 
 # Build a minimal docker image
 FROM scratch
@@ -92,6 +93,7 @@ COPY --from=build /usr/share/zoneinfo/ /usr/share/zoneinfo/
 # This is your application
 COPY --from=build /app/deps /
 COPY --from=build /app/bin /app/bin
+COPY --from=build /app/models /models
 
 # Copy the docs into the container, you can serve this file in your app
 COPY --from=build /app/openapi.yml /openapi.yml
