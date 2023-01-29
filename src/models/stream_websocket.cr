@@ -25,7 +25,9 @@ class StreamWebsocket
   protected def start_stream
     io = UDPSocket.new
     begin
-      io.read_timeout = 2.seconds
+      io.reuse_address = true
+      io.reuse_port = true
+      io.read_timeout = 3.seconds
       io.bind "0.0.0.0", multicast_address.port
       io.join_group(multicast_address)
 

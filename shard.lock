@@ -18,7 +18,7 @@ shards:
 
   ffmpeg:
     git: https://github.com/spider-gazelle/ffmpeg.git
-    version: 0.4.2
+    version: 0.4.3
 
   future:
     git: https://github.com/crystal-community/future.cr.git
