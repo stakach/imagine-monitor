@@ -9,7 +9,7 @@ class Monitor < Application
   STREAM            = StreamWebsocket.new(MULTICAST_ADDRESS, MULTICAST_PORT)
 
   @[AC::Route::WebSocket("/stream")]
-  def websocket(socket)
+  def stream(socket)
     socket.on_close { STREAM.remove(socket) }
     STREAM.add socket
   end
@@ -18,7 +18,7 @@ class Monitor < Application
   DETECTOR = Detector.new(URI.new("udp", MULTICAST_ADDRESS, MULTICAST_PORT), MODEL)
 
   @[AC::Route::WebSocket("/detections")]
-  def websocket(socket, include_frame : Bool = false)
+  def detect(socket, include_frame : Bool = false)
     DETECTOR.add socket
     socket.on_close { DETECTOR.remove socket }
   end

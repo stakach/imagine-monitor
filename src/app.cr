@@ -73,6 +73,11 @@ puts "Launching #{App::NAME} v#{App::VERSION}"
 require "./config"
 server = ActionController::Server.new(port, host)
 
+# context = OpenSSL::SSL::Context::Server.new
+# context.certificate_chain = "./bin/cert.crt"
+# context.private_key = "./bin/cert.key"
+# server.socket.bind_tls(host, port, context, reuse_port: true)
+
 # (process_count < 1) == `System.cpu_count` but this is not always accurate
 # Clustering using processes, there is no forking once crystal threads drop
 server.cluster(process_count, "-w", "--workers") if process_count != 1

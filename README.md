@@ -52,3 +52,12 @@ export ENABLE_DETECTOR=false
 # start the process
 ./bin/monitor
 ```
+
+### Generate Keys
+
+```shell
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 365
+openssl pkey -in key.pem -out cert.key
+openssl crl2pkcs7 -nocrl -certfile cert.pem | openssl pkcs7 -print_certs -out cert.crt
+rm *.pem
+```
