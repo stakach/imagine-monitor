@@ -11,9 +11,11 @@ class StreamWebsocket
   def initialize(@multicast_address)
   end
 
+  alias Transport = HTTP::WebSocket | TCPSocket
+
   getter multicast_address : Socket::IPAddress
   getter? closed : Bool = true
-  @sockets : Array(HTTP::WebSocket) = [] of HTTP::WebSocket
+  @sockets : Array(Transport) = [] of Transport
   @socket_lock : Mutex = Mutex.new
 
   def start_streaming : Nil
@@ -55,11 +57,11 @@ class StreamWebsocket
     @closed = true
   end
 
-  def add(socket : HTTP::WebSocket)
+  def add(socket : Transport)
     @socket_lock.synchronize { @sockets << socket }
   end
 
-  def remove(socket : HTTP::WebSocket)
+  def remove(socket : Transport)
     @socket_lock.synchronize { @sockets.delete socket }
   end
 
@@ -72,8 +74,8 @@ class StreamWebsocket
       begin
         socket.send payload
       rescue error
-        # the close callback should remove the socket
         Log.info(exception: error) { "socket send failed" }
+        remove socket
         socket.close
       end
     end

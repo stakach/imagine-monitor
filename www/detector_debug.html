@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<head>
+  <meta name="color-scheme" content="dark">
+  <style>
+      body{
+          margin: 0;
+      }
+  </style>
+</head>
+<body>
+  <script>
+      window.onload = function () {
+          var socketURL = window.location.origin.replace('http', 'ws') + '/video/detections';
+          var ws = new WebSocket(socketURL);
+
+          // Connection opened
+          ws.addEventListener('open', function (event) {
+            console.log('WS Established...');
+          });
+
+          ws.addEventListener('close', function (event) {
+            console.log('WS Lost...');
+          });
+
+          ws.addEventListener('message', function (event) {
+            console.log('detections ', event.data);
+          });
+      }
+  </script>
+</body>

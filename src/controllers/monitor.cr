@@ -1,3 +1,4 @@
+require "socket"
 require "imagine/models/example_object_detection"
 
 # outputs the video stream and detections via websockets
@@ -28,6 +29,16 @@ end
 if ENV["ENABLE_STREAMING"]? == "true"
   puts " > Streaming enabled..."
   Monitor::STREAM.start_streaming
+  server = TCPServer.new(App::DEFAULT_HOST, App::DEFAULT_PORT + 1)
+  spawn do
+    while client = server.accept?
+      begin
+        Monitor::STREAM.add(client)
+      rescue
+        sleep 0.1
+      end
+    end
+  end
 end
 
 if ENV["ENABLE_DETECTOR"]? == "true"
