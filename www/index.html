@@ -71,10 +71,10 @@
     var update_rect = function() {
       rect = video.getBoundingClientRect();
     };
-    var resize_timeout = setTimeout(update_rect, 1000);
+    var resize_timeout = setTimeout(update_rect, 200);
     window.addEventListener('resize', function(event) {
       clearTimeout(resize_timeout);
-      resize_timeout = setTimeout(update_rect, 1000);
+      resize_timeout = setTimeout(update_rect, 200);
     }, true);
 
     // Create a WebSocket connection
@@ -94,10 +94,10 @@
         // Get the detection
         var detection = data.detections[i];
         // Calculate the box coordinates with scaling and offset
-        var top = rect.top + (detection.top * video.videoHeight + offset) * scale;
-        var left = rect.left + detection.left * video.videoWidth * scale;
-        var bottom = rect.top + (detection.bottom * video.videoHeight - offset) * scale;
-        var right = rect.left + detection.right * video.videoWidth * scale;
+        var top = rect.top + detection.top * rect.height;
+        var left = rect.left + detection.left * rect.width;
+        var bottom = rect.top + detection.bottom * rect.height;
+        var right = rect.left + detection.right * rect.width;
         // Create a div element for the box
         var box = document.createElement("div");
         // Set the box style
