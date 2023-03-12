@@ -24,40 +24,100 @@
   <div id="container">
     <div class="vsc-controller"></div>
     <video autoplay muted id="player"></video>
+    <div id="container"></div>
   </div>
   <script>
     function parse(data) {
-      var input = new Uint8Array(data),
-      video = input;
-
+      var video_data = new Uint8Array(data);
       return {
-        video: video,
+        video: video_data,
       };
     }
 
     window.onload = function () {
-      var socketURL = window.location.origin.replace('http', 'ws') + '/video/stream';
+      var streamURL = window.location.origin.replace('http', 'ws') + '/video/stream';
       var jmuxer = new JMuxer({
         node: 'player',
         mode: 'video',
         debug: false
       });
 
-      var ws = new WebSocket(socketURL);
-      ws.binaryType = 'arraybuffer';
-      ws.addEventListener('message', function (event) {
+      var video_stream = new WebSocket(streamURL);
+      video_stream.binaryType = 'arraybuffer';
+      video_stream.addEventListener('message', function (event) {
         var data = parse(event.data);
         jmuxer.feed(data);
       });
     }
 
-    const video = document.querySelector("video");
+    var width = 0,
+        height = 0;
+
+    // Get the video element
+    const video = document.getElementById("video");
     video.addEventListener("loadedmetadata", function (event) {
-      var width = this.videoWidth,
-          height = this.videoHeight;
+      width = this.videoWidth;
+      height = this.videoHeight;
       console.log(
         "The dimensions of the media and tracks are now known.", width, height
       );
     });
+
+    // Get the container element
+    const container = document.getElementById("container");
+
+    // Get the video bounding rectangle
+    var rect = video.getBoundingClientRect();
+    window.addEventListener('resize', function(event) {
+      rect = video.getBoundingClientRect();
+    }, true);
+
+    // Create a WebSocket connection
+    var detectionsURL = window.location.origin.replace('http', 'ws').replace(':3001', ':3000') + '/video/detections';
+    var ws = new WebSocket(detectionsURL);
+    // Listen for messages from the server
+    ws.onmessage = function(event) {
+      // Parse the JSON data
+      var data = JSON.parse(event.data);
+      // Clear the container
+      container.innerHTML = "";
+      // Calculate the scaling factor and offset
+      var scale = Math.min(rect.width / video.videoWidth, rect.height / video.videoHeight);
+      var offset = (rect.height - scale * video.videoHeight) / 2;
+      // Loop through the detections
+      for (var i = 0; i < data.detections.length; i++) {
+        // Get the detection
+        var detection = data.detections[i];
+        // Calculate the box coordinates with scaling and offset
+        var top = rect.top + (detection.top * video.videoHeight + offset) * scale;
+        var left = rect.left + detection.left * video.videoWidth * scale;
+        var bottom = rect.top + (detection.bottom * video.videoHeight - offset) * scale;
+        var right = rect.left + detection.right * video.videoWidth * scale;
+        // Create a div element for the box
+        var box = document.createElement("div");
+        // Set the box style
+        box.style.position = "absolute";
+        box.style.border = "2px solid red";
+        box.style.top = top + "px";
+        box.style.left = left + "px";
+        box.style.width = (right - left) + "px";
+        box.style.height = (bottom - top) + "px";
+        // Create a span element for the label
+        var label = document.createElement("span");
+        // Set the label style
+        label.style.position = "absolute";
+        label.style.backgroundColor = "red";
+        label.style.color = "white";
+        label.style.padding = "2px";
+        label.style.bottom = "100%";
+        label.style.left = "0";
+        // Set the label text
+        label.textContent = detection.name + " (" + detection.score.toFixed(2) + ")";
+        // Append the label to the box
+        box.appendChild(label);
+        // Append the box to the container
+        container.appendChild(box);
+      }
+    };
   </script>
 </body>
