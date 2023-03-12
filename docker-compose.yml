@@ -20,7 +20,7 @@ services:
       ENABLE_DETECTOR: "true"
       MODEL_PATH: "/models/mobilenet_v1.tflite"
       MULTICAST_ADDRESS: "224.1.1.1"
-      MULTICAST_PORT: "8558"
+      MULTICAST_PORT: "8555"
 
   # ports web: 3001 and tcp stream: 3002
   stream:
@@ -37,5 +37,5 @@ services:
       ENABLE_DETECTOR: "false"
       MODEL_PATH: "/models/mobilenet_v1.tflite"
       MULTICAST_ADDRESS: "224.1.1.1"
-      MULTICAST_PORT: "8558"
+      MULTICAST_PORT: "8555"
       SG_SERVER_PORT: "3001"
