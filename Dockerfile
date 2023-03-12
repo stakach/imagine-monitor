@@ -94,6 +94,7 @@ COPY --from=build /usr/share/zoneinfo/ /usr/share/zoneinfo/
 COPY --from=build /app/deps /
 COPY --from=build /app/bin /app/bin
 COPY --from=build /app/models /models
+COPY ./www /www
 
 # Copy the docs into the container, you can serve this file in your app
 COPY --from=build /app/openapi.yml /openapi.yml

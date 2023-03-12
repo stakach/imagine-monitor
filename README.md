@@ -53,8 +53,11 @@ export ENABLE_DETECTOR=false
 ./bin/monitor
 ```
 
-Then can watch the stream over TCP on port in VLC using
-`tcp/h264://<ip-address>:3002`
+Then can watch the stream over
+
+* TCP on port in VLC using `tcp/h264://<ip-address>:3002`
+* Multicast `udp/h264://@224.1.1.1:8555`
+* Web Browser `http://<ip-address>:3001/index.html`
 
 ### Generate Keys
 
