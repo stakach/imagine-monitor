@@ -101,10 +101,6 @@ COPY --from=build /app/openapi.yml /openapi.yml
 # Use an unprivileged user.
 USER appuser:appuser
 
-# Spider-gazelle has a built in helper for health checks (change this as desired for your applications)
-HEALTHCHECK CMD ["/app/bin/monitor", "-c", "http://127.0.0.1:3000/"]
-
-# Run the app binding on port 3000
-EXPOSE 3000
+# Run the app binding on host for multicast access
 ENTRYPOINT ["/app/bin/monitor"]
-CMD ["/app/bin/monitor", "-b", "0.0.0.0", "-p", "3000"]
+CMD ["/app/bin/monitor"]

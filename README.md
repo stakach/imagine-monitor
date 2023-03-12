@@ -53,7 +53,12 @@ export ENABLE_DETECTOR=false
 ./bin/monitor
 ```
 
+Then can watch the stream over TCP on port in VLC using
+`tcp/h264://<ip-address>:3002`
+
 ### Generate Keys
+
+If you would like to run local development over self signed HTTPS
 
 ```shell
 openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 365

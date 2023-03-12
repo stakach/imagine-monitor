@@ -8,11 +8,10 @@ services:
   # run: `docker-compose build` to update the service
   # run: `docker-compose up -d` to launch the service
   imagine:
-    image: vontakach/imagine
+    image: stakach/imagine
     container_name: imagine
     hostname: imagine
-    ports:
-      - "3000:3000"
+    network_mode: "host"
     volumes:
       - ./models/:/models/
     environment:
@@ -22,3 +21,20 @@ services:
       MODEL_PATH: "/models/mobilenet_v1.tflite"
       MULTICAST_ADDRESS: "224.1.1.1"
       MULTICAST_PORT: "8558"
+
+  # ports web: 3001 and tcp stream: 3002
+  stream:
+    image: stakach/imagine
+    container_name: stream
+    hostname: stream
+    network_mode: "host"
+    volumes:
+      - ./models/:/models/
+    environment:
+      SG_ENV: "development"
+      ENABLE_STREAMING: "true"
+      ENABLE_DETECTOR: "false"
+      MODEL_PATH: "/models/mobilenet_v1.tflite"
+      MULTICAST_ADDRESS: "224.1.1.1"
+      MULTICAST_PORT: "8558"
+      SG_SERVER_PORT: "3001"

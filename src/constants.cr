@@ -11,11 +11,10 @@ module App
 
   ENVIRONMENT = ENV["SG_ENV"]? || "development"
 
-  # ameba:disable Lint/LiteralsComparison
   IS_PRODUCTION = ENVIRONMENT == "production"
 
   DEFAULT_PORT          = (ENV["SG_SERVER_PORT"]? || 3000).to_i
-  DEFAULT_HOST          = ENV["SG_SERVER_HOST"]? || "127.0.0.1"
+  DEFAULT_HOST          = ENV["SG_SERVER_HOST"]? || "0.0.0.0"
   DEFAULT_PROCESS_COUNT = (ENV["SG_PROCESS_COUNT"]? || 1).to_i
 
   STATIC_FILE_PATH = ENV["PUBLIC_WWW_PATH"]? || "./www"
@@ -28,7 +27,7 @@ module App
   end
 
   # flag to indicate if we're outputting trace logs
-  class_getter trace : Bool = false
+  class_getter? trace : Bool = false
 
   # Registers callbacks for USR1 signal
   #

@@ -24,7 +24,7 @@ class Detector
   end
 
   protected def start_detection
-    @detector.detections do |frame, detections|
+    @detector.detections do |_frame, detections|
       sockets = @socket_lock.synchronize { @sockets.dup }
 
       payload = {
