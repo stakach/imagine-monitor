@@ -30,6 +30,7 @@ services:
     network_mode: "host"
     volumes:
       - ./models/:/models/
+      - ./www/:/www/
     environment:
       SG_ENV: "development"
       ENABLE_STREAMING: "true"

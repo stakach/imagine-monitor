@@ -3,40 +3,40 @@
   <meta name="color-scheme" content="dark">
   <script type="text/javascript" src="./jmuxer.min.js"></script>
   <style>
-      body{
-          margin: 0;
-      }
+    body {
+      margin: 0;
+    }
   </style>
 </head>
 <body>
   <div id="container" style="width: 100%; margin: 0 auto;">
-      <div class="vsc-controller"></div>
-      <video width="100%" autoplay muted id="player"></video>
+    <div class="vsc-controller"></div>
+    <video width="100%" height="100%" autoplay muted id="player"></video>
   </div>
   <script>
-      function parse(data) {
-          var input = new Uint8Array(data),
-          video = input;
+    function parse(data) {
+      var input = new Uint8Array(data),
+      video = input;
 
-          return {
-              video: video,
-          };
-      }
+      return {
+        video: video,
+      };
+    }
 
-      window.onload = function () {
-          var socketURL = window.location.origin.replace('http', 'ws') + '/video/stream';
-          var jmuxer = new JMuxer({
-              node: 'player',
-              mode: 'video',
-              debug: true
-          });
+    window.onload = function () {
+      var socketURL = window.location.origin.replace('http', 'ws') + '/video/stream';
+      var jmuxer = new JMuxer({
+        node: 'player',
+        mode: 'video',
+        debug: true
+      });
 
-          var ws = new WebSocket(socketURL);
-          ws.binaryType = 'arraybuffer';
-          ws.addEventListener('message', function (event) {
-              var data = parse(event.data);
-              jmuxer.feed(data);
-          });
-      }
+      var ws = new WebSocket(socketURL);
+      ws.binaryType = 'arraybuffer';
+      ws.addEventListener('message', function (event) {
+        var data = parse(event.data);
+        jmuxer.feed(data);
+      });
+    }
   </script>
 </body>
