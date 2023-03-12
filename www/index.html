@@ -24,7 +24,7 @@
   <div id="container">
     <div class="vsc-controller"></div>
     <video autoplay muted id="player"></video>
-    <div id="container"></div>
+    <div id="detections"></div>
   </div>
   <script>
     function parse(data) {
@@ -54,7 +54,7 @@
         height = 0;
 
     // Get the video element
-    const video = document.getElementById("video");
+    const video = document.querySelector("video");
     video.addEventListener("loadedmetadata", function (event) {
       width = this.videoWidth;
       height = this.videoHeight;
@@ -64,12 +64,17 @@
     });
 
     // Get the container element
-    const container = document.getElementById("container");
+    const detections = document.getElementById("detections");
 
     // Get the video bounding rectangle
     var rect = video.getBoundingClientRect();
-    window.addEventListener('resize', function(event) {
+    var update_rect = function() {
       rect = video.getBoundingClientRect();
+    };
+    var resize_timeout = setTimeout(update_rect, 1000);
+    window.addEventListener('resize', function(event) {
+      clearTimeout(resize_timeout);
+      resize_timeout = setTimeout(update_rect, 1000);
     }, true);
 
     // Create a WebSocket connection
@@ -80,7 +85,7 @@
       // Parse the JSON data
       var data = JSON.parse(event.data);
       // Clear the container
-      container.innerHTML = "";
+      detections.innerHTML = "";
       // Calculate the scaling factor and offset
       var scale = Math.min(rect.width / video.videoWidth, rect.height / video.videoHeight);
       var offset = (rect.height - scale * video.videoHeight) / 2;
@@ -116,7 +121,7 @@
         // Append the label to the box
         box.appendChild(label);
         // Append the box to the container
-        container.appendChild(box);
+        detections.appendChild(box);
       }
     };
   </script>
