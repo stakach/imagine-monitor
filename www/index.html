@@ -143,6 +143,10 @@
       for (var i = 0; i < data.detections.length; i++) {
         // Get the detection
         var detection = data.detections[i];
+        if (detection.score < 0.2) {
+          continue;
+        }
+
         // Calculate the box coordinates with scaling and offset
         var top = (letter_box + sizes.letter_box) + rect.top + detection.top * rect_height;
         var left = (pillar_box + sizes.pillar_box) + rect.left + detection.left * rect_width;

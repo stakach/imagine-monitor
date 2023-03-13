@@ -8,7 +8,7 @@ Type=simple
 Restart=always
 RestartSec=1
 User=imagine
-ExecStart=libcamera-vid -t 0 --width 1920 --height 1080 --inline --intra 30 --vflip --flush --codec h264 -o udp://224.1.1.1:8555
+ExecStart=libcamera-vid -t 0 --width 1920 --height 1080 --inline --intra 30 --vflip --hflip --flush --codec h264 -o udp://224.1.1.1:8555
 
 [Install]
 WantedBy=multi-user.target
