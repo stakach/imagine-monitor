@@ -46,7 +46,7 @@ RUN git clone --depth 1 https://github.com/tensorflow/tensorflow
 RUN mkdir tfbuild
 WORKDIR /app/tfbuild
 RUN cmake ../tensorflow/tensorflow/lite/c -DTFLITE_ENABLE_GPU=ON
-RUN cmake --build . -j2 || true
+RUN cmake --build . -j4 || true
 RUN echo "---------- WE ARE BUILDING AGAIN!! ----------"
 RUN cmake --build . -j1
 RUN mkdir -p ../lib/tensorflow_lite/ext

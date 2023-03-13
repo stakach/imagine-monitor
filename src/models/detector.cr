@@ -16,20 +16,23 @@ class Detector
 
   def start : Nil
     return if @detector.processing?
+    @detecting = true
     spawn { start_detection }
   end
 
   def stop : Nil
+    @detecting = false
     @detector.stop
   end
 
   protected def start_detection
-    @detector.detections do |frame, detections|
+    @detector.detections do |frame, detections, fps|
       sockets = @socket_lock.synchronize { @sockets.dup }
 
       payload = {
         # provide the frame information as the NN input is a subset
         # of the full video frame
+        fps:        fps.frames_per_second,
         width:      frame.width,
         height:     frame.height,
         detections: detections,
@@ -48,6 +51,12 @@ class Detector
           socket.close
         end
       end
+    end
+  ensure
+    # resume detecting if the stream disconnects
+    if @detecting
+      sleep 2
+      spawn { start_detection } if @detecting
     end
   end
 

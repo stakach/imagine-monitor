@@ -139,6 +139,21 @@
 
       // Clear the container
       detections.innerHTML = "";
+
+      // Add the FPS Counter
+      var label = document.createElement("span");
+      // Set the label style
+      label.style.position = "absolute";
+      label.style.backgroundColor = "blue";
+      label.style.color = "white";
+      label.style.padding = "2px";
+      label.style.top = "0";
+      label.style.right = "0";
+      // Set the label text
+      label.textContent = "FPS: " + detection.fps.toFixed(2);
+      // Append the box to the container
+      detections.appendChild(label);
+
       // Loop through the detections
       for (var i = 0; i < data.detections.length; i++) {
         // Get the detection
