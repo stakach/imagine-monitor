@@ -21,6 +21,7 @@ services:
       MODEL_PATH: "/models/mobilenet_v1.tflite"
       MULTICAST_ADDRESS: "224.1.1.1"
       MULTICAST_PORT: "8555"
+      CRYSTAL_WORKERS: "2"
 
   # ports web: 3001 and tcp stream: 3002
   stream:
@@ -39,7 +40,6 @@ services:
       MULTICAST_ADDRESS: "224.1.1.1"
       MULTICAST_PORT: "8555"
       SG_SERVER_PORT: "3001"
-      CRYSTAL_WORKERS: "2"
 
   nginx:
     image: nginx

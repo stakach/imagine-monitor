@@ -34,7 +34,7 @@ shards:
 
   imagine:
     git: https://github.com/stakach/imagine.git
-    version: 0.1.0+git.commit.8dd97e07e501d955092c22a43accb94ed599001e
+    version: 0.1.0+git.commit.8e3bcb775281b9de32ed18163a17462d8ae564d4
 
   ipaddress:
     git: https://github.com/sija/ipaddress.cr.git
@@ -46,7 +46,7 @@ shards:
 
   lucky_router:
     git: https://github.com/luckyframework/lucky_router.git
-    version: 0.5.1
+    version: 0.5.2
 
   stumpy_core:
     git: https://github.com/stumpycr/stumpy_core.git
