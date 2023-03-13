@@ -58,6 +58,7 @@ Then can watch the stream over
 * TCP on port in VLC using `tcp/h264://<ip-address>:3002`
 * Multicast `udp/h264://@224.1.1.1:8555`
 * Web Browser `http://<ip-address>:3001/index.html`
+* via Nginx `http://<ip-address>:5000/`
 
 ### Generate Keys
 

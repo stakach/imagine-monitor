@@ -75,6 +75,34 @@
     // Get the detections container element
     const detections = document.getElementById("detections");
 
+    var calculate_boxing = function(video_width, video_height, element_width, element_height) {
+      var video_ratio = video_width / video_height;
+      var element_ratio = element_width / element_height;
+
+      var letter_box = 0.0;
+      var pillar_box = 0.0;
+
+      if (element_ratio < video_ratio) {
+        // The video will be letterboxed
+        console.log("Letterboxing");
+        letter_box = (element_width / video_width * video_height - element_height) / 2.0;
+        letter_box = Math.abs(letter_box);
+      } else if (element_ratio > video_ratio) {
+        // The video will be pillarboxed
+        console.log("Pillarboxing");
+        pillar_box = (element_height / video_height * video_width - element_width) / 2.0;
+        pillar_box = Math.abs(pillar_box);
+      } else {
+        // The video will fit exactly
+        console.log("Video fits exactly");
+      }
+
+      return {
+        letter_box: letter_box,
+        pillar_box: pillar_box
+      };
+    };
+
     // Get the video bounding rectangle
     var rect = video.getBoundingClientRect();
     var letter_box = 0.0;
@@ -82,30 +110,10 @@
 
     var update_rect = function() {
       rect = video.getBoundingClientRect();
+      var sizes = calculate_boxing(video.videoWidth, video.videoHeight, rect.width, rect.height);
 
-      var video_ratio = video.videoWidth / video.videoHeight;
-      var element_ratio = rect.width / rect.height;
-
-      if (element_ratio < video_ratio) {
-        // The video will be letterboxed
-        console.log("Letterboxing");
-        pillar_box = 0;
-
-        letter_box = (rect.width / video.videoWidth * video.videoHeight - rect.height) / 2.0
-        letter_box = Math.abs(letter_box);
-      } else if (element_ratio > video_ratio) {
-        // The video will be pillarboxed
-        console.log("Pillarboxing");
-        letter_box = 0;
-
-        pillar_box = (rect.height / video.videoHeight * video.videoWidth - rect.width) / 2.0
-        pillar_box = Math.abs(pillar_box);
-      } else {
-        // The video will fit exactly
-        console.log("Video fits exactly");
-        letter_box = 0.0;
-        pillar_box = 0.0;
-      }
+      letter_box = sizes.letter_box;
+      pillar_box = sizes.pillar_box;
     };
     var resize_timeout = setTimeout(update_rect, 200);
     window.addEventListener('resize', function(event) {
@@ -121,6 +129,14 @@
     ws.onmessage = function(event) {
       // Parse the JSON data
       var data = JSON.parse(event.data);
+
+      // calculate further adjustments that are required
+      var rect_height = (rect.height - letter_box * 2)
+      var rect_width = (rect.width - pillar_box * 2)
+      var sizes = calculate_boxing(data.width, data.height, rect_width, rect_height);
+      rect_height = (rect_height - sizes.letter_box * 2)
+      rect_width = (rect_width - sizes.pillar_box * 2)
+
       // Clear the container
       detections.innerHTML = "";
       // Loop through the detections
@@ -128,12 +144,10 @@
         // Get the detection
         var detection = data.detections[i];
         // Calculate the box coordinates with scaling and offset
-        var rect_height = (rect.height - letter_box * 2)
-        var rect_width = (rect.width - pillar_box * 2)
-        var top = letter_box + rect.top + detection.top * rect_height;
-        var left = pillar_box + rect.left + detection.left * rect_width;
-        var bottom = letter_box + rect.top + detection.bottom * rect_height;
-        var right = pillar_box + rect.left + detection.right * rect_width;
+        var top = (letter_box + sizes.letter_box) + rect.top + detection.top * rect_height;
+        var left = (pillar_box + sizes.pillar_box) + rect.left + detection.left * rect_width;
+        var bottom = (letter_box + sizes.letter_box) + rect.top + detection.bottom * rect_height;
+        var right = (pillar_box + sizes.pillar_box) + rect.left + detection.right * rect_width;
         // Create a div element for the box
         var box = document.createElement("div");
         // Set the box style
