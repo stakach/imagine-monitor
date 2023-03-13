@@ -14,9 +14,18 @@
       overflow: hidden;
     }
 
-    #container, video {
+    #container {
+      position: relative;
       width: 100%;
       height: 100%;
+    }
+
+    #player {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
     }
   </style>
 </head>
@@ -50,32 +59,60 @@
       });
     }
 
-    var width = 0,
-        height = 0;
+    var video_width = 0,
+        video_height = 0;
 
     // Get the video element
     const video = document.querySelector("video");
     video.addEventListener("loadedmetadata", function (event) {
-      width = this.videoWidth;
-      height = this.videoHeight;
+      video_width = this.videoWidth;
+      video_height = this.videoHeight;
       console.log(
-        "The dimensions of the media and tracks are now known.", width, height
+        "The dimensions of the media and tracks are now known.", video_width, video_height
       );
     });
 
-    // Get the container element
+    // Get the detections container element
     const detections = document.getElementById("detections");
 
     // Get the video bounding rectangle
     var rect = video.getBoundingClientRect();
+    var letter_box = 0.0;
+    var pillar_box = 0.0;
+
     var update_rect = function() {
       rect = video.getBoundingClientRect();
+
+      var video_ratio = video.videoWidth / video.videoHeight;
+      var element_ratio = rect.width / rect.height;
+
+      if (element_ratio < video_ratio) {
+        // The video will be letterboxed
+        console.log("Letterboxing");
+        pillar_box = 0;
+
+        letter_box = (rect.width / video.videoWidth * video.videoHeight - rect.height) / 2.0
+        letter_box = letter_box.abs / 2.0
+      } else if (element_ratio > video_ratio) {
+        // The video will be pillarboxed
+        console.log("Pillarboxing");
+        letter_box = 0;
+
+        pillar_box = (rect.height / video.videoHeight * video.videoWidth - rect.width) / 2.0
+        pillar_box = pillar_box.abs / 2.0
+      } else {
+        // The video will fit exactly
+        console.log("Video fits exactly");
+        letter_box = 0.0;
+        pillar_box = 0.0;
+      }
     };
     var resize_timeout = setTimeout(update_rect, 200);
     window.addEventListener('resize', function(event) {
       clearTimeout(resize_timeout);
       resize_timeout = setTimeout(update_rect, 200);
     }, true);
+    update_rect();
 
     // Create a WebSocket connection
     var detectionsURL = window.location.origin.replace('http', 'ws').replace(':3001', ':3000') + '/video/detections';
@@ -86,18 +123,17 @@
       var data = JSON.parse(event.data);
       // Clear the container
       detections.innerHTML = "";
-      // Calculate the scaling factor and offset
-      var scale = Math.min(rect.width / video.videoWidth, rect.height / video.videoHeight);
-      var offset = (rect.height - scale * video.videoHeight) / 2;
       // Loop through the detections
       for (var i = 0; i < data.detections.length; i++) {
         // Get the detection
         var detection = data.detections[i];
         // Calculate the box coordinates with scaling and offset
-        var top = rect.top + detection.top * rect.height;
-        var left = rect.left + detection.left * rect.width;
-        var bottom = rect.top + detection.bottom * rect.height;
-        var right = rect.left + detection.right * rect.width;
+        var rect_height = (rect.height - letter_box * 2)
+        var rect_width = (rect.width - pillar_box * 2)
+        var top = letter_box + rect.top + detection.top * rect_height;
+        var left = pillar_box + rect.left + detection.left * rect_width;
+        var bottom = letter_box + rect.top + detection.bottom * rect_height;
+        var right = pillar_box + rect.left + detection.right * rect_width;
         // Create a div element for the box
         var box = document.createElement("div");
         // Set the box style

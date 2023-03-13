@@ -24,14 +24,19 @@ class Detector
   end
 
   protected def start_detection
-    @detector.detections do |_frame, detections|
+    @detector.detections do |frame, detections|
       sockets = @socket_lock.synchronize { @sockets.dup }
 
       payload = {
+        # provide the frame information as the NN input is a subset
+        # of the full video frame
+        width:      frame.width,
+        height:     frame.height,
         detections: detections,
       }.to_json
 
       # TODO:: should probably send in parallel and also detect slow clients and close them
+      # or provide a simple queue of 1 and overwrite any queued data - i.e. client misses some detections
       # not high priority
       sockets.each do |socket|
         begin
