@@ -59,7 +59,7 @@ COPY ./src /app/src
 
 # Build application
 # RUN shards build --production --release --error-trace
-RUN shards build --production --error-trace
+RUN shards build --production --error-trace -Dpreview_mt
 
 # Extract binary dependencies (uncomment if not compiling a static build)
 RUN for binary in /app/bin/*; do \
