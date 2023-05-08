@@ -16,6 +16,21 @@ RUN adduser \
     --uid "${UID}" \
     "${USER}"
 
+# Update system and install required packages
+RUN apt-get update && apt-get install -y \
+    gnupg \
+    wget \
+    curl \
+    apt-transport-https \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add Google Cloud public key
+RUN wget -q -O - https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor > /etc/apt/trusted.gpg.d/coral-edgetpu.gpg
+
+# Add Coral packages repository
+RUN echo "deb [signed-by=/etc/apt/trusted.gpg.d/coral-edgetpu.gpg] https://packages.cloud.google.com/apt coral-edgetpu-stable main" | tee /etc/apt/sources.list.d/coral-edgetpu.list
+
 # Add dependencies commonly required for building crystal applications
 # hadolint ignore=DL3018
 RUN apt update && apt install -y \
@@ -32,7 +47,9 @@ RUN apt update && apt install -y \
     ca-certificates \
     opencl-headers \
     libopencv-core-dev \
-    clang-format-9
+    clang-format-9 \
+    libedgetpu-dev \
+    libedgetpu1-std
 
 # Install shards for caching
 COPY shard.yml shard.yml
@@ -75,17 +92,33 @@ RUN update-ca-certificates
 RUN mkdir ./models
 
 # Build a minimal docker image
-FROM scratch
+FROM debian:stable-slim
 WORKDIR /
 ENV PATH=$PATH:/
+
+# Update system and install required packages
+RUN apt-get update && apt-get install -y \
+    gnupg \
+    wget \
+    curl \
+    apt-transport-https \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add Google Cloud public key
+RUN wget -q -O - https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor > /etc/apt/trusted.gpg.d/coral-edgetpu.gpg
+
+# Add Coral packages repository
+RUN echo "deb [signed-by=/etc/apt/trusted.gpg.d/coral-edgetpu.gpg] https://packages.cloud.google.com/apt coral-edgetpu-stable main" | tee /etc/apt/sources.list.d/coral-edgetpu.list
+
+# Install Edge TPU runtime
+RUN apt-get update \
+    && apt-get install -y libedgetpu1-std \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy the user information over
 COPY --from=build /etc/passwd /etc/passwd
 COPY --from=build /etc/group /etc/group
-
-# These provide certificate chain validation where communicating with external services over TLS
-COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 
 # This is required for Timezone support
 COPY --from=build /usr/share/zoneinfo/ /usr/share/zoneinfo/

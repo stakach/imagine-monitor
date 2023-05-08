@@ -22,6 +22,8 @@ services:
       MULTICAST_ADDRESS: "224.1.1.1"
       MULTICAST_PORT: "8555"
       CRYSTAL_WORKERS: "2"
+    devices:
+      - ${CORAL_USB_PATH:-/dev/bus/usb/002/004}:/dev/bus/usb/002/004
 
   # ports web: 3001 and tcp stream: 3002
   stream:
