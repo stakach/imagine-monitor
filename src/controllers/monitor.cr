@@ -8,6 +8,8 @@ class Monitor < Application
   MULTICAST_ADDRESS = ENV["MULTICAST_ADDRESS"]
   MULTICAST_PORT    = ENV["MULTICAST_PORT"].to_i
   STREAM            = StreamWebsocket.new(MULTICAST_ADDRESS, MULTICAST_PORT)
+  ENABLE_DETECTOR   = ENV["ENABLE_DETECTOR"]? == "true"
+  ENABLE_STREAMING  = ENV["ENABLE_STREAMING"]? == "true"
 
   @[AC::Route::WebSocket("/stream")]
   def stream(socket)
@@ -15,7 +17,7 @@ class Monitor < Application
     STREAM.add socket
   end
 
-  MODEL    = Imagine::Model::ExampleObjectDetection.new(Path.new ENV["MODEL_PATH"])
+  MODEL    = Imagine::Model::ExampleObjectDetection.new(Path.new(ENV["MODEL_PATH"]), enable_tpu: ENABLE_DETECTOR)
   DETECTOR = Detector.new(URI.new("udp", MULTICAST_ADDRESS, MULTICAST_PORT), MODEL)
 
   @[AC::Route::WebSocket("/detections")]
@@ -26,7 +28,7 @@ class Monitor < Application
 end
 
 # streaming and object detection are split between multiple processes
-if ENV["ENABLE_STREAMING"]? == "true"
+if Monitor::ENABLE_STREAMING
   puts " > Streaming enabled..."
   Monitor::STREAM.start_streaming
   server = TCPServer.new(App::DEFAULT_HOST, App::DEFAULT_PORT + 1)
@@ -41,7 +43,7 @@ if ENV["ENABLE_STREAMING"]? == "true"
   end
 end
 
-if ENV["ENABLE_DETECTOR"]? == "true"
+if Monitor::ENABLE_DETECTOR
   puts " > Object detection enabled..."
   Monitor::DETECTOR.start
 end
