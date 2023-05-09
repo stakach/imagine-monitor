@@ -1,21 +1,6 @@
 FROM 84codes/crystal:latest-debian-11 as build
 WORKDIR /app
 
-# Create a non-privileged user, defaults are appuser:10001
-ARG IMAGE_UID="10001"
-ENV UID=$IMAGE_UID
-ENV USER=appuser
-
-# See https://stackoverflow.com/a/55757473/12429735
-RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --home "/nonexistent" \
-    --shell "/sbin/nologin" \
-    --no-create-home \
-    --uid "${UID}" \
-    "${USER}"
-
 # Update system and install required packages
 RUN apt-get update && apt-get install -y \
     gnupg \
@@ -116,10 +101,6 @@ RUN apt-get update \
     && apt-get install -y libedgetpu1-std \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the user information over
-COPY --from=build /etc/passwd /etc/passwd
-COPY --from=build /etc/group /etc/group
-
 # This is required for Timezone support
 COPY --from=build /usr/share/zoneinfo/ /usr/share/zoneinfo/
 
@@ -131,9 +112,6 @@ COPY ./www /www
 
 # Copy the docs into the container, you can serve this file in your app
 COPY --from=build /app/openapi.yml /openapi.yml
-
-# Use an unprivileged user.
-USER appuser:appuser
 
 # Run the app binding on host for multicast access
 ENTRYPOINT ["/app/bin/monitor"]

@@ -70,3 +70,16 @@ openssl pkey -in key.pem -out cert.key
 openssl crl2pkcs7 -nocrl -certfile cert.pem | openssl pkcs7 -print_certs -out cert.crt
 rm *.pem
 ```
+
+## Other notes
+
+Currently running containers as root for access to Coral USB TPU hardware.
+Need work out udev rules for enabling access to the user in the container.
+
+```
+echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="1a6e", ATTRS{idProduct}=="089a", MODE="0666", GROUP="plugdev"' | sudo tee /etc/udev/rules.d/65-coral-usb-accelerator.rules
+echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="18d1", ATTRS{idProduct}=="9302", MODE="0666", GROUP="plugdev"' | sudo tee -a /etc/udev/rules.d/65-coral-usb-accelerator.rules
+```
+
+Something like this, outside and within the container.
+(The product ID changes from `Global Unichip Corp` to `Google Inc`)
