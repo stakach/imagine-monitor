@@ -1,5 +1,4 @@
 require "socket"
-require "imagine/models/example_object_detection"
 
 # outputs the video stream and detections via websockets
 class Monitor < Application
@@ -10,6 +9,7 @@ class Monitor < Application
   STREAM            = StreamWebsocket.new(MULTICAST_ADDRESS, MULTICAST_PORT)
   ENABLE_DETECTOR   = ENV["ENABLE_DETECTOR"]? == "true"
   ENABLE_STREAMING  = ENV["ENABLE_STREAMING"]? == "true"
+  ENABLE_EDGETPU    = ENV["ENABLE_EDGETPU"]? == "true"
 
   @[AC::Route::WebSocket("/stream")]
   def stream(socket)
@@ -17,7 +17,9 @@ class Monitor < Application
     STREAM.add socket
   end
 
-  MODEL    = Imagine::Model::ExampleObjectDetection.new(Path.new(ENV["MODEL_PATH"]), enable_tpu: ENABLE_DETECTOR)
+  MODEL_LOC = ENV["MODEL_PATH"]? ? Path.new(ENV["MODEL_PATH"]) : URI.parse(ENV["MODEL_URI"])
+  MODEL_LABELS = ENV["LABELS_URI"]? ? URI.parse(ENV["LABELS_URI"]) : nil
+  MODEL    = Imagine::Model::TFLiteImage.new(MODEL_LOC, labels: MODEL_LABELS, enable_tpu: ENABLE_EDGETPU)
   DETECTOR = Detector.new(URI.new("udp", MULTICAST_ADDRESS, MULTICAST_PORT), MODEL)
 
   @[AC::Route::WebSocket("/detections")]
