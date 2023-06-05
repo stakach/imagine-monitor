@@ -18,7 +18,7 @@ shards:
 
   ffmpeg:
     git: https://github.com/spider-gazelle/ffmpeg.git
-    version: 0.4.3
+    version: 0.4.4
 
   future:
     git: https://github.com/crystal-community/future.cr.git
@@ -34,7 +34,7 @@ shards:
 
   imagine:
     git: https://github.com/stakach/imagine.git
-    version: 0.2.0+git.commit.0e8469f904a40c500855760c21fe4b60a16045f8
+    version: 0.3.0+git.commit.15f4e604fa67539a4428abf0dfb34d7262eaedf6
 
   ipaddress:
     git: https://github.com/sija/ipaddress.cr.git
@@ -48,11 +48,27 @@ shards:
     git: https://github.com/luckyframework/lucky_router.git
     version: 0.5.2
 
+  pcf-parser:
+    git: https://github.com/l3kn/pcf-parser.git
+    version: 0.1.1
+
   stumpy_core:
     git: https://github.com/stumpycr/stumpy_core.git
     version: 1.9.1
 
+  stumpy_resize:
+    git: https://github.com/spider-gazelle/stumpy_resize.git
+    version: 1.3.1
+
+  stumpy_utils:
+    git: https://github.com/stumpycr/stumpy_utils.git
+    version: 0.5.1
+
   tensorflow_lite:
     git: https://github.com/spider-gazelle/tensorflow_lite.git
-    version: 1.2.2
+    version: 2.1.0
+
+  tflite_image:
+    git: https://github.com/spider-gazelle/tflite_image.git
+    version: 1.1.0
 
