@@ -26,7 +26,7 @@ class Detector
   end
 
   protected def start_detection
-    @detector.detections do |frame, detections, fps, scale_time, invoke_time|
+    @detector.detections do |frame, detections, fps, scale_time, invoke_time, frame_counter, frame_invoked|
       sockets = @socket_lock.synchronize { @sockets.dup }
 
       payload = {
@@ -38,6 +38,8 @@ class Detector
         width:      frame.width,
         height:     frame.height,
         detections: detections,
+        frame_counter: frame_counter,
+        frames_scaled: frame_invoked,
       }.to_json
 
       # TODO:: should probably send in parallel and also detect slow clients and close them
