@@ -17,7 +17,7 @@ class Detector
   def start : Nil
     return if @detector.processing?
     @detecting = true
-    spawn { start_detection }
+    start_detection
   end
 
   def stop : Nil
@@ -26,41 +26,38 @@ class Detector
   end
 
   protected def start_detection
-    @detector.detections do |frame, detections, fps, scale_time, invoke_time, frame_counter, frame_invoked|
+    @detector.detections do |frame, detections, fps, invoke_time|
       sockets = @socket_lock.synchronize { @sockets.dup }
 
       payload = {
         # provide the frame information as the NN input is a subset
         # of the full video frame
         fps:        fps.frames_per_second,
-        scale:      scale_time.total_milliseconds,
         invoke:     invoke_time.total_milliseconds,
         width:      frame.width,
         height:     frame.height,
         detections: detections,
-        frame_counter: frame_counter,
-        frames_scaled: frame_invoked,
       }.to_json
 
-      # TODO:: should probably send in parallel and also detect slow clients and close them
-      # or provide a simple queue of 1 and overwrite any queued data - i.e. client misses some detections
-      # not high priority
+      # send in parallel
+      # TODO:: use a fiber pool so we're not spawning constantly here
       sockets.each do |socket|
-        begin
-          # TODO:: provide the frame as a JPEG for those connections that would like it
-          socket.send(payload)
-        rescue error
-          # the close callback should remove the socket
-          Log.info(exception: error) { "socket send failed" }
-          socket.close
-        end
+        perform_send(socket, payload)
       end
+      Fiber.yield
     end
-  ensure
-    # resume detecting if the stream disconnects
-    if @detecting
-      sleep 2
-      spawn { start_detection } if @detecting
+  end
+
+  protected def perform_send(socket, payload)
+    spawn do
+      begin
+        # TODO:: provide the frame as a JPEG for those connections that would like it
+        socket.send(payload)
+      rescue error
+        # the close callback should remove the socket
+        Log.info(exception: error) { "socket send failed" }
+        socket.close
+      end
     end
   end
 

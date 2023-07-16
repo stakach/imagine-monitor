@@ -17,10 +17,10 @@ class Monitor < Application
     STREAM.add socket
   end
 
-  MODEL_LOC = ENV["MODEL_PATH"]? ? Path.new(ENV["MODEL_PATH"]) : URI.parse(ENV["MODEL_URI"])
+  MODEL_LOC    = ENV["MODEL_PATH"]? ? Path.new(ENV["MODEL_PATH"]) : URI.parse(ENV["MODEL_URI"])
   MODEL_LABELS = ENV["LABELS_URI"]? ? URI.parse(ENV["LABELS_URI"]) : nil
-  MODEL    = Imagine::Model::TFLiteImage.new(MODEL_LOC, labels: MODEL_LABELS, enable_tpu: ENABLE_EDGETPU)
-  DETECTOR = Detector.new(URI.new("udp", MULTICAST_ADDRESS, MULTICAST_PORT), MODEL)
+  MODEL        = Imagine::Model::TFLiteImage.new(MODEL_LOC, labels: MODEL_LABELS, enable_tpu: ENABLE_EDGETPU)
+  DETECTOR     = Detector.new(URI.new("udp", MULTICAST_ADDRESS, MULTICAST_PORT), MODEL)
 
   @[AC::Route::WebSocket("/detections")]
   def detect(socket, include_frame : Bool = false)
