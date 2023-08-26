@@ -5,11 +5,43 @@ require "imagine"
 class Detector
   Log = ::App::Log.for("detector")
 
-  def initialize(address : URI, model : Imagine::ModelAdaptor)
-    @detector = Imagine::Detector.new(address, model)
+  def initialize(address : Path, width : Int32, height : Int32, model : Imagine::ModelAdaptor)
+    loopback = V4L2::Video.find_loopback_device
+    raise "no loopback running. run 'sudo modprobe v4l2loopback'" unless loopback
+
+    video = V4L2::Video.new(address)
+    format = video.supported_formats.find! { |form| form.code == "YUYV" }
+    resolution = format.frame_sizes.find! { |frame| frame.width == width && frame.height == height }
+    fps = resolution.frame_rate
+    video.close
+
+    # launch FFMPEG
+    # push a video to the loopback device
+    wait_running = Channel(Process).new
+    spawn do
+      Process.run("ffmpeg", {
+        "-f", "v4l2", "-input_format", "yuyv422",
+        "-video_size", "#{fps.width}x#{fps.height}",
+        "-i", address.to_s,
+        "-c:v", "copy", "-f", "v4l2", loopback.to_s,
+      }) do |process|
+        wait_running.send process
+      end
+    end
+
+    # terminate ffmpeg once the spec has finished
+    select
+    when @loopback_process = wait_running.receive
+      sleep 1
+    when timeout(5.seconds)
+      raise "timeout waiting for loopback"
+    end
+
+    @detector = Imagine::V4L2Detector.new(loopback, fps, model)
   end
 
-  @detector : Imagine::Detector
+  @loopback_process : Process
+  @detector : Imagine::V4L2Detector
   @sockets : Array(HTTP::WebSocket) = [] of HTTP::WebSocket
   @socket_lock : Mutex = Mutex.new
   @detecting : Bool = false
@@ -23,6 +55,11 @@ class Detector
   def stop : Nil
     @detecting = false
     @detector.stop
+    @loopback_process.terminate
+  end
+
+  def finalize
+    @loopback_process.terminate
   end
 
   protected def start_detection

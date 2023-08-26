@@ -6,13 +6,41 @@ class StreamWebsocket
 
   def initialize(address : String, port : Int)
     @multicast_address = Socket::IPAddress.new(address, port)
+
+    loopback = V4L2::Video.find_loopback_device
+    raise "no loopback running. run 'sudo modprobe v4l2loopback'" unless loopback
+
+    # launch FFMPEG
+    # push a video to the loopback device
+    wait_running = Channel(Process).new
+    spawn do
+      Process.run("ffmpeg", {
+        "-f", "v4l2", "-i", loopback.to_s,
+        "-c:v", "libx264", "-g", "60",
+        "-force_key_frames", "expr:gte(t,n_forced*2)",
+        "-bsf:v", "h264_mp4toannexb", "-flags:v", "+global_header",
+        "-f", "mpegts", "udp://#{address}:#{port}?pkt_size=1316",
+      }) do |process|
+        wait_running.send process
+      end
+    end
+
+    # terminate ffmpeg once the spec has finished
+    select
+    when @streaming_process = wait_running.receive
+      sleep 1
+    when timeout(5.seconds)
+      raise "timeout waiting for stream to start"
+    end
   end
 
-  def initialize(@multicast_address)
+  def self.new(multicast_address)
+    StreamWebsocket.new(multicast_address.address, multicast_address.port)
   end
 
   alias Transport = HTTP::WebSocket | TCPSocket
 
+  @streaming_process : Process
   getter multicast_address : Socket::IPAddress
   getter? closed : Bool = true
   @sockets : Array(Transport) = [] of Transport
@@ -55,6 +83,11 @@ class StreamWebsocket
 
   def close
     @closed = true
+    @streaming_process.terminate
+  end
+
+  def finalize
+    @streaming_process.terminate
   end
 
   def add(socket : Transport)

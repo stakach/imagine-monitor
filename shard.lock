@@ -2,11 +2,11 @@ version: 2.0
 shards:
   action-controller:
     git: https://github.com/spider-gazelle/action-controller.git
-    version: 6.1.2
+    version: 7.2.1
 
   ameba:
     git: https://github.com/veelenga/ameba.git
-    version: 1.4.3
+    version: 1.5.0
 
   backtracer:
     git: https://github.com/sija/backtracer.cr.git
@@ -22,7 +22,7 @@ shards:
 
   ffmpeg:
     git: https://github.com/spider-gazelle/ffmpeg.git
-    version: 0.6.1
+    version: 0.7.2
 
   future:
     git: https://github.com/crystal-community/future.cr.git
@@ -38,7 +38,7 @@ shards:
 
   imagine:
     git: https://github.com/stakach/imagine.git
-    version: 0.5.0+git.commit.dc43274f6ccffafc3513688ba5040cd33ff3fbf0
+    version: 0.5.0+git.commit.45a664f87c1f2569fea1f8b79250776e6e7ef500
 
   ipaddress:
     git: https://github.com/sija/ipaddress.cr.git
@@ -79,4 +79,8 @@ shards:
   tflite_image:
     git: https://github.com/spider-gazelle/tflite_image.git
     version: 1.1.0
+
+  v4l2:
+    git: https://github.com/spider-gazelle/v4l2.cr.git
+    version: 1.0.0
 
