@@ -14,13 +14,14 @@ class StreamWebsocket
     # push a video to the loopback device
     wait_running = Channel(Process).new
     spawn do
+      # ffmpeg -f v4l2 -i /dev/video4 -c:v libx264 -g 50 -f mpegts output.ts
       Process.run("ffmpeg", {
         "-f", "v4l2", "-i", loopback.to_s,
-        "-c:v", "libx264", "-g", "60",
-        "-force_key_frames", "expr:gte(t,n_forced*2)",
-        "-bsf:v", "h264_mp4toannexb", "-flags:v", "+global_header",
-        "-f", "mpegts", "udp://#{address}:#{port}?pkt_size=1316",
-      }) do |process|
+        "-c:v", "libx264", "-tune", "zerolatency", "-preset", "ultrafast",
+        "-profile:v", "main", "-level:v", "3.1", "-pix_fmt", "yuv420p",
+        "-g", "60",
+        "-an", "-f", "mpegts", "udp://#{address}:#{port}?pkt_size=1316",
+      }, error: :inherit, output: :inherit) do |process|
         wait_running.send process
       end
     end

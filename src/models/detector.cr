@@ -24,7 +24,7 @@ class Detector
         "-video_size", "#{fps.width}x#{fps.height}",
         "-i", address.to_s,
         "-c:v", "copy", "-f", "v4l2", loopback.to_s,
-      }) do |process|
+      }, error: :inherit, output: :inherit) do |process|
         wait_running.send process
       end
     end
