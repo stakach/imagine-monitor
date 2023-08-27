@@ -4,13 +4,15 @@ This is the primary detection service for imagine.
 
 ```mermaid
 flowchart TD
-    B>H264 Broadcast] --> I[[Imagine Service]]
+    B>V4L2 Input Device] --> I[[Imagine Service]]
     I --> V[Video Stream Websocket]
     I --> D[Detections Websocket]
-    V --> N{{NGINX Webserver}}
+    V --> N{{Webserver}}
     D --> N
     U((Web browser / User)) --> N
 ```
+
+It pulls video frames from video
 
 ### Deploying
 
@@ -39,6 +41,12 @@ libcamera-vid -t 0 --inline --listen --width 2028 --height 1080 --codec h264 -n 
 Launch imagine monitor
 
 ```shell
+# What video input should be used
+export INPUT_DEVICE=/dev/video0
+export INPUT_WIDTH=640
+export INPUT_HEIGHT=480
+
+# What address should be used to stream the video on
 export MULTICAST_ADDRESS=224.0.0.1
 export MULTICAST_PORT=1234
 
@@ -47,7 +55,11 @@ export ENABLE_STREAMING=true
 
 # Enable the detection model
 export MODEL_PATH="./mobilenet_v3_small.tflite"
+# Or specify a URI
+export MODEL_URI=https://raw.githubusercontent.com/google-coral/test_data/master/efficientdet_lite0_320_ptq_edgetpu.tflite
+export LABELS_URI=https://raw.githubusercontent.com/google-coral/test_data/master/coco_labels.txt
 export ENABLE_DETECTOR=false
+export ENABLE_EDGETPU=true
 
 # start the process
 ./bin/monitor
@@ -55,10 +67,8 @@ export ENABLE_DETECTOR=false
 
 Then can watch the stream over
 
-* TCP on port in VLC using `tcp/h264://<ip-address>:3002`
-* Multicast `udp/h264://@224.1.1.1:8555`
-* Web Browser `http://<ip-address>:3001/index.html`
-* via Nginx `http://<ip-address>:5000/`
+* Multicast `udp://@224.0.0.1:1234`
+* Web Browser `http://<ip-address>:3000/mpegts.html`
 
 ### Generate Keys
 
