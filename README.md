@@ -28,15 +28,7 @@ Multicast is used so we can process the video in different ways without having t
 
 * to consume multicast video in docker you need use the host network (or the multicast source must come from another container)
 * docker on windows or mac will *NOT WORK* as they are virtualising linux and running in a bridged network
-* WSL on windows will also not work. You can however run the code locally on mac.
-
-Launch an example stream
-
-```shell
-ffmpeg -stream_loop -1 -i ./test.mp4 -f mpegts udp://224.0.0.1:1234
-
-libcamera-vid -t 0 --inline --listen --width 2028 --height 1080 --codec h264 -n -o udp://224.0.0.1:1234
-```
+* WSL on windows will also not work as you can't run kernel modules such as V4L2 loopback devices
 
 Launch imagine monitor
 
