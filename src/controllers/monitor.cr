@@ -41,7 +41,12 @@ class Monitor < Application
   end
 end
 
-# streaming and object detection are split between multiple processes
+if Monitor::ENABLE_DETECTOR
+  puts " > Object detection enabled..."
+  Monitor::DETECTOR.start
+end
+
+# streaming and object detection can be split between multiple processes
 if Monitor::ENABLE_STREAMING
   puts " > Streaming enabled..."
   Monitor::STREAM.start_streaming
@@ -55,9 +60,4 @@ if Monitor::ENABLE_STREAMING
       end
     end
   end
-end
-
-if Monitor::ENABLE_DETECTOR
-  puts " > Object detection enabled..."
-  Monitor::DETECTOR.start
 end

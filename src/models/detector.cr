@@ -5,15 +5,32 @@ require "imagine"
 class Detector
   Log = ::App::Log.for("detector")
 
-  def initialize(address : Path, width : Int32, height : Int32, model : Imagine::ModelAdaptor)
+  def initialize(@device : Path, width : Int32, height : Int32, model : Imagine::ModelAdaptor)
     loopback = V4L2::Video.find_loopback_device
     raise "no loopback running. run 'sudo modprobe v4l2loopback'" unless loopback
+    @loopback = loopback
 
-    video = V4L2::Video.new(address)
+    video = V4L2::Video.new(@device)
     format = video.supported_formats.find! { |form| form.code == "YUYV" }
     resolution = format.frame_sizes.find! { |frame| frame.width == width && frame.height == height }
-    fps = resolution.frame_rate
+    @fps = fps = resolution.frame_rate
     video.close
+
+    @detector = Imagine::V4L2Detector.new(loopback, fps, model)
+  end
+
+  @device : Path
+  @fps : V4L2::FrameRate
+  @loopback : Path
+  @loopback_process : Process? = nil
+  @detector : Imagine::V4L2Detector
+  @sockets : Array(HTTP::WebSocket) = [] of HTTP::WebSocket
+  @socket_lock : Mutex = Mutex.new
+  @detecting : Bool = false
+
+  def start : Nil
+    return if @detecting
+    @detecting = true
 
     # launch FFMPEG
     # push a video to the loopback device
@@ -21,9 +38,9 @@ class Detector
     spawn do
       Process.run("ffmpeg", {
         "-f", "v4l2", "-input_format", "yuyv422",
-        "-video_size", "#{fps.width}x#{fps.height}",
-        "-i", address.to_s,
-        "-c:v", "copy", "-f", "v4l2", loopback.to_s,
+        "-video_size", "#{@fps.width}x#{@fps.height}",
+        "-i", @device.to_s,
+        "-c:v", "copy", "-f", "v4l2", @loopback.to_s,
       }, error: :inherit, output: :inherit) do |process|
         wait_running.send process
       end
@@ -37,29 +54,17 @@ class Detector
       raise "timeout waiting for loopback"
     end
 
-    @detector = Imagine::V4L2Detector.new(loopback, fps, model)
-  end
-
-  @loopback_process : Process
-  @detector : Imagine::V4L2Detector
-  @sockets : Array(HTTP::WebSocket) = [] of HTTP::WebSocket
-  @socket_lock : Mutex = Mutex.new
-  @detecting : Bool = false
-
-  def start : Nil
-    return if @detector.processing?
-    @detecting = true
     start_detection
   end
 
   def stop : Nil
     @detecting = false
     @detector.stop
-    @loopback_process.terminate
+    @loopback_process.try &.terminate
   end
 
   def finalize
-    @loopback_process.terminate
+    @loopback_process.try &.terminate
   end
 
   protected def start_detection

@@ -7,4 +7,3 @@ app
 bin
 .DS_Store
 *.so
-models
