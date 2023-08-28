@@ -23,10 +23,15 @@ class Monitor < Application
   MULTICAST_ADDRESS = ENV["MULTICAST_ADDRESS"]
   MULTICAST_PORT    = ENV["MULTICAST_PORT"].to_i
 
-  STREAM           = StreamWebsocket.new(MULTICAST_ADDRESS, MULTICAST_PORT)
-  ENABLE_DETECTOR  = ENV["ENABLE_DETECTOR"]? == "true"
+  REPLAY_MOUNT_PATH = Path[ENV["REPLAY_MOUNT_PATH"]? || "/mnt/ramdisk"]
+
+  STREAM = StreamWebsocket.new(MULTICAST_ADDRESS, MULTICAST_PORT)
+  REPLAY = CaptureReplay.new(REPLAY_MOUNT_PATH, MULTICAST_ADDRESS, MULTICAST_PORT)
+
   ENABLE_STREAMING = ENV["ENABLE_STREAMING"]? == "true"
+  ENABLE_DETECTOR  = ENV["ENABLE_DETECTOR"]? == "true"
   ENABLE_EDGETPU   = ENV["ENABLE_EDGETPU"]? == "true"
+  ENABLE_REPLAY    = ENV["ENABLE_REPLAY"]? == "true"
 
   @[AC::Route::WebSocket("/stream")]
   def stream(socket)
@@ -38,6 +43,24 @@ class Monitor < Application
   def detect(socket, include_frame : Bool = false)
     DETECTOR.add socket
     socket.on_close { DETECTOR.remove socket }
+  end
+
+  @[AC::Route::GET("/replay")]
+  def replay(seconds : UInt32)
+    tempfile = File.tempfile(".ts")
+    file_path = Path[tempfile.path]
+    tempfile.close
+
+    Monitor::REPLAY.save_replay(seconds.seconds, file_path)
+
+    response.content_type = "video/mp2t"
+    response.headers["Content-Disposition"] = %(attachment; filename="#{File.basename(file_path)}")
+    @__render_called__ = true
+
+    File.open(file_path) do |file|
+      IO.copy(file, context.response)
+    end
+    File.delete file_path
   end
 end
 
@@ -60,4 +83,10 @@ if Monitor::ENABLE_STREAMING
       end
     end
   end
+end
+
+if Monitor::ENABLE_REPLAY
+  puts " > Replay enabled..."
+  Monitor::REPLAY.configure_ram_drive
+  Monitor::REPLAY.capture_video
 end

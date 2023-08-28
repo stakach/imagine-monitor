@@ -1,40 +1,98 @@
 class CaptureReplay
   def initialize(@location : Path, address : String, port : Int)
     @multicast_address = Socket::IPAddress.new(address, port)
+    Dir.mkdir_p @location
     @dir = Dir.new(@location)
   end
 
+  # so we don't destory the HD writing data all the time
   def configure_ram_drive
-    # mkdir /mnt/ramdisk
-    # mount -t tmpfs -o size=512M tmpfs /mnt/ramdisk
+    output = IO::Memory.new
+    status = Process.run("mount", output: output)
+    raise "failed to check for existing mount" unless status.success?
+
+    # sudo mkdir -p /mnt/ramdisk
+    # sudo mount -t tmpfs -o size=512M tmpfs /mnt/ramdisk
+    if !String.new(output.to_slice).includes?(@location.to_s)
+      status = Process.run("mount", {"-t", "tmpfs", "-o", "size=512M", "tmpfs", @location.to_s})
+      raise "failed to mount ramdisk: #{@location}" unless status.success?
+    end
+  end
+
+  @capture_process : Process? = nil
+
+  def finalize
+    @capture_process.try &.terminate
   end
 
   def capture_video
-    # ffmpeg -i udp://<MULTICAST_IP>:<PORT>?overrun_nonfatal=1 -c copy -map 0 -f segment -segment_format_options break_non_keyframes=1 -reset_timestamps 1 -strftime 1 "/mnt/ramdisk/output_%Y%m%d%H%M%S.ts"
+    wait_running = Channel(Process).new
+    spawn do
+      filenames = File.join(@location, "output_%Y%m%d%H%M%S.ts")
+      Process.run("ffmpeg", {
+        "-i", "udp://#{@multicast_address.address}:#{@multicast_address.port}?overrun_nonfatal=1",
+        "-c", "copy", "-copyinkf", "-an", "-map", "0", "-f",
+        "segment", "-segment_time", "2",
+        "-reset_timestamps", "1", "-strftime", "1", filenames.to_s,
+      }, error: :inherit, output: :inherit) do |process|
+        wait_running.send process
+      end
+    end
+
+    # terminate ffmpeg once the spec has finished
+    select
+    when @capture_process = wait_running.receive
+      sleep 1
+    when timeout(5.seconds)
+      raise "timeout waiting for video capture to start"
+    end
+
     spawn { cleanup_old_files }
   end
 
-  def save_replay(period : Time::Span)
-    half_time = period / 2
-    time = half_time.ago
-    sleep half_time
-    files = @dir.entries.select do |file|
-      File.info(file).modification_time > expired_time
-    end
-
-    # TODO:: save and merge the files to a location
-  end
-
-  def cleanup_old_files : Nil
+  protected def cleanup_old_files : Nil
     loop do
       sleep 11.seconds
-      expired_time = 60.seconds.ago
+      expired_time = 120.seconds.ago
 
-      @dir.entries.each do |file|
-        next if {".", ".."}.includes?(file)
-        file = File.join(@location, file)
-        File.delete(file) if File.info(file).modification_time < expired_time
+      files = @dir.entries
+      puts "Checking #{files.size} files for removal"
+
+      files.each do |file|
+        begin
+          next if {".", ".."}.includes?(file)
+          file = File.join(@location, file)
+          File.delete(file) if File.info(file).modification_time < expired_time
+        rescue error
+          puts "Error checking removal of #{file}\n#{error.inspect_with_backtrace}"
+        end
       end
+    end
+  end
+
+  # TODO:: resolve this!!
+  def save_replay(period : Time::Span, file : Path)
+    half_time = period / 2
+    created_after = half_time.ago
+    sleep half_time
+    files = @dir.entries.select do |file|
+      File.info(file).modification_time >= created_after
+    end
+
+    file_list = File.tempfile("replay", ".txt") do |list|
+      files.each { |file| list.puts(file) }
+    end
+
+    begin
+      status = Process.run("ffmpeg", {
+        "-f", "concat", "-safe", "0",
+        "-i", file_list.path, "-c", "copy",
+        file.to_s,
+      }, error: :inherit, output: :inherit)
+
+      raise "failed to save video replay" unless status.success?
+    ensure
+      file_list.delete
     end
   end
 end
