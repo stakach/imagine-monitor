@@ -30,10 +30,21 @@ Multicast is used so we can process the video in different ways without having t
 * docker on windows or mac will *NOT WORK* as they are virtualising linux and running in a bridged network
 * WSL on windows will also not work as you can't run kernel modules such as V4L2 loopback devices
 
+For replay support, you'll need to have setup the ramdisk unless you want to run as root
+
+```shell
+sudo mkdir -p /mnt/ramdisk
+sudo mount -t tmpfs -o size=512M tmpfs /mnt/ramdisk
+
+export REPLAY_MOUNT_PATH=/mnt/ramdisk
+```
+
 Launch imagine monitor
 
 ```shell
 # What video input should be used
+# can get this list of formats: v4l2-ctl --list-formats-ext --device /dev/video0
+# we expect YUYV format
 export INPUT_DEVICE=/dev/video0
 export INPUT_WIDTH=640
 export INPUT_HEIGHT=480
@@ -42,16 +53,17 @@ export INPUT_HEIGHT=480
 export MULTICAST_ADDRESS=224.0.0.1
 export MULTICAST_PORT=1234
 
-# Enable streaming of the video source for monitoring
-export ENABLE_STREAMING=true
-
 # Enable the detection model
-export MODEL_PATH="./mobilenet_v3_small.tflite"
+export MODEL_PATH="./tf-models/mobilenet_v3_small.tflite"
 # Or specify a URI
 export MODEL_URI=https://raw.githubusercontent.com/google-coral/test_data/master/efficientdet_lite0_320_ptq_edgetpu.tflite
 export LABELS_URI=https://raw.githubusercontent.com/google-coral/test_data/master/coco_labels.txt
-export ENABLE_DETECTOR=false
+
+# Enable or disable certain features
+export ENABLE_STREAMING=true
+export ENABLE_DETECTOR=true
 export ENABLE_EDGETPU=true
+export ENABLE_REPLAY=true
 
 # start the process
 ./bin/monitor
