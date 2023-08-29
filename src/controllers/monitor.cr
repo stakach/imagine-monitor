@@ -4,6 +4,11 @@ require "socket"
 class Monitor < Application
   base "/video"
 
+  ENABLE_STREAMING = ENV["ENABLE_STREAMING"]? == "true"
+  ENABLE_DETECTOR  = ENV["ENABLE_DETECTOR"]? == "true"
+  ENABLE_EDGETPU   = ENV["ENABLE_EDGETPU"]? == "true"
+  ENABLE_REPLAY    = ENV["ENABLE_REPLAY"]? == "true"
+
   # The device details
   INPUT_DEVICE = Path[ENV["INPUT_DEVICE"]? || "/dev/video0"]
   INPUT_WIDTH  = ENV["INPUT_WIDTH"].to_i
@@ -28,11 +33,6 @@ class Monitor < Application
   STREAM = StreamWebsocket.new(MULTICAST_ADDRESS, MULTICAST_PORT)
   REPLAY = CaptureReplay.new(REPLAY_MOUNT_PATH, MULTICAST_ADDRESS, MULTICAST_PORT)
 
-  ENABLE_STREAMING = ENV["ENABLE_STREAMING"]? == "true"
-  ENABLE_DETECTOR  = ENV["ENABLE_DETECTOR"]? == "true"
-  ENABLE_EDGETPU   = ENV["ENABLE_EDGETPU"]? == "true"
-  ENABLE_REPLAY    = ENV["ENABLE_REPLAY"]? == "true"
-
   @[AC::Route::WebSocket("/stream")]
   def stream(socket)
     socket.on_close { STREAM.remove(socket) }
@@ -50,6 +50,7 @@ class Monitor < Application
     tempfile = File.tempfile(".ts")
     file_path = Path[tempfile.path]
     tempfile.close
+    File.delete(tempfile.path)
 
     Monitor::REPLAY.save_replay(seconds.seconds, file_path)
 

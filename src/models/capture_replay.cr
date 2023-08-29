@@ -2,7 +2,6 @@ class CaptureReplay
   def initialize(@location : Path, address : String, port : Int)
     @multicast_address = Socket::IPAddress.new(address, port)
     Dir.mkdir_p @location
-    @dir = Dir.new(@location)
   end
 
   # so we don't destory the HD writing data all the time
@@ -53,9 +52,9 @@ class CaptureReplay
   protected def cleanup_old_files : Nil
     loop do
       sleep 11.seconds
-      expired_time = 120.seconds.ago
+      expired_time = 180.seconds.ago
 
-      files = @dir.entries
+      files = Dir.entries(@location)
       puts "Checking #{files.size} files for removal"
 
       files.each do |file|
@@ -70,24 +69,43 @@ class CaptureReplay
     end
   end
 
-  # TODO:: resolve this!!
-  def save_replay(period : Time::Span, file : Path)
+  def save_replay(period : Time::Span, output_file : Path)
     half_time = period / 2
     created_after = half_time.ago
     sleep half_time
-    files = @dir.entries.select do |file|
-      File.info(file).modification_time >= created_after
+    files = Dir.entries(@location).select do |file|
+      next if {".", ".."}.includes?(file)
+      file = File.join(@location, file)
+
+      begin
+        info = File.info(file)
+        !info.size.zero? && info.modification_time >= created_after
+      rescue err : File::NotFoundError
+        nil
+      rescue error
+        puts "Error obtaining file info for #{file}\n#{error.inspect_with_backtrace}"
+        nil
+      end
     end
 
-    file_list = File.tempfile("replay", ".txt") do |list|
-      files.each { |file| list.puts(file) }
+    # ensure the files are joined in the correct order
+    files.map! { |file| File.join(@location, file) }.sort! do |file1, file2|
+      info1 = File.info(file1)
+      info2 = File.info(file2)
+      info1.modification_time <=> info2.modification_time
+    end
+
+    # remove the file being currently written
+    raise "no replay files found..." if files.size.zero?
+    file_list = File.tempfile("replay-", ".txt") do |list|
+      files.each { |file| list.puts("file '#{file}'") }
     end
 
     begin
       status = Process.run("ffmpeg", {
         "-f", "concat", "-safe", "0",
         "-i", file_list.path, "-c", "copy",
-        file.to_s,
+        output_file.to_s,
       }, error: :inherit, output: :inherit)
 
       raise "failed to save video replay" unless status.success?
