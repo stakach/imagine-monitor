@@ -6,6 +6,23 @@ class StreamWebsocket
 
   def initialize(address : String, port : Int)
     @multicast_address = Socket::IPAddress.new(address, port)
+  end
+
+  def self.new(multicast_address)
+    StreamWebsocket.new(multicast_address.address, multicast_address.port)
+  end
+
+  alias Transport = HTTP::WebSocket | TCPSocket
+
+  @streaming_process : Process? = nil
+  getter multicast_address : Socket::IPAddress
+  getter? closed : Bool = true
+  @sockets : Array(Transport) = [] of Transport
+  @socket_lock : Mutex = Mutex.new
+
+  def start_streaming : Nil
+    return unless @closed
+    @closed = false
 
     loopback = V4L2::Video.find_loopback_device
     raise "no loopback running. run 'sudo modprobe v4l2loopback'" unless loopback
@@ -20,7 +37,7 @@ class StreamWebsocket
         "-c:v", "libx264", "-tune", "zerolatency", "-preset", "ultrafast",
         "-profile:v", "main", "-level:v", "3.1", "-pix_fmt", "yuv420p",
         "-g", "60",
-        "-an", "-f", "mpegts", "udp://#{address}:#{port}?pkt_size=1316",
+        "-an", "-f", "mpegts", "udp://#{@multicast_address.address}:#{@multicast_address.port}?pkt_size=1316",
       }, error: :inherit, output: :inherit) do |process|
         wait_running.send process
       end
@@ -33,23 +50,7 @@ class StreamWebsocket
     when timeout(5.seconds)
       raise "timeout waiting for stream to start"
     end
-  end
 
-  def self.new(multicast_address)
-    StreamWebsocket.new(multicast_address.address, multicast_address.port)
-  end
-
-  alias Transport = HTTP::WebSocket | TCPSocket
-
-  @streaming_process : Process
-  getter multicast_address : Socket::IPAddress
-  getter? closed : Bool = true
-  @sockets : Array(Transport) = [] of Transport
-  @socket_lock : Mutex = Mutex.new
-
-  def start_streaming : Nil
-    return unless @closed
-    @closed = false
     spawn { start_stream }
   end
 
@@ -84,11 +85,11 @@ class StreamWebsocket
 
   def close
     @closed = true
-    @streaming_process.terminate
+    @streaming_process.try &.terminate
   end
 
   def finalize
-    @streaming_process.terminate
+    @streaming_process.try &.terminate
   end
 
   def add(socket : Transport)

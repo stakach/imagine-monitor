@@ -4,6 +4,11 @@ require "socket"
 class Monitor < Application
   base "/video"
 
+  ENABLE_STREAMING = ENV["ENABLE_STREAMING"]? == "true"
+  ENABLE_DETECTOR  = ENV["ENABLE_DETECTOR"]? == "true"
+  ENABLE_EDGETPU   = ENV["ENABLE_EDGETPU"]? == "true"
+  ENABLE_REPLAY    = ENV["ENABLE_REPLAY"]? == "true"
+
   # The device details
   INPUT_DEVICE = Path[ENV["INPUT_DEVICE"]? || "/dev/video0"]
   INPUT_WIDTH  = ENV["INPUT_WIDTH"].to_i
@@ -23,10 +28,10 @@ class Monitor < Application
   MULTICAST_ADDRESS = ENV["MULTICAST_ADDRESS"]
   MULTICAST_PORT    = ENV["MULTICAST_PORT"].to_i
 
-  STREAM           = StreamWebsocket.new(MULTICAST_ADDRESS, MULTICAST_PORT)
-  ENABLE_DETECTOR  = ENV["ENABLE_DETECTOR"]? == "true"
-  ENABLE_STREAMING = ENV["ENABLE_STREAMING"]? == "true"
-  ENABLE_EDGETPU   = ENV["ENABLE_EDGETPU"]? == "true"
+  REPLAY_MOUNT_PATH = Path[ENV["REPLAY_MOUNT_PATH"]? || "/mnt/ramdisk"]
+
+  STREAM = StreamWebsocket.new(MULTICAST_ADDRESS, MULTICAST_PORT)
+  REPLAY = CaptureReplay.new(REPLAY_MOUNT_PATH, MULTICAST_ADDRESS, MULTICAST_PORT)
 
   @[AC::Route::WebSocket("/stream")]
   def stream(socket)
@@ -39,9 +44,33 @@ class Monitor < Application
     DETECTOR.add socket
     socket.on_close { DETECTOR.remove socket }
   end
+
+  @[AC::Route::GET("/replay")]
+  def replay(seconds : UInt32)
+    tempfile = File.tempfile(".ts")
+    file_path = Path[tempfile.path]
+    tempfile.close
+    File.delete(tempfile.path)
+
+    Monitor::REPLAY.save_replay(seconds.seconds, file_path)
+
+    response.content_type = "video/mp2t"
+    response.headers["Content-Disposition"] = %(attachment; filename="#{File.basename(file_path)}")
+    @__render_called__ = true
+
+    File.open(file_path) do |file|
+      IO.copy(file, context.response)
+    end
+    File.delete file_path
+  end
 end
 
-# streaming and object detection are split between multiple processes
+if Monitor::ENABLE_DETECTOR
+  puts " > Object detection enabled..."
+  Monitor::DETECTOR.start
+end
+
+# streaming and object detection can be split between multiple processes
 if Monitor::ENABLE_STREAMING
   puts " > Streaming enabled..."
   Monitor::STREAM.start_streaming
@@ -57,7 +86,8 @@ if Monitor::ENABLE_STREAMING
   end
 end
 
-if Monitor::ENABLE_DETECTOR
-  puts " > Object detection enabled..."
-  Monitor::DETECTOR.start
+if Monitor::ENABLE_REPLAY
+  puts " > Replay enabled..."
+  Monitor::REPLAY.configure_ram_drive
+  Monitor::REPLAY.capture_video
 end
