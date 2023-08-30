@@ -28,7 +28,7 @@ class StreamWebsocket
     raise "no loopback running. run 'sudo modprobe v4l2loopback'" unless loopback
 
     # launch FFMPEG
-    # push a video to the loopback device
+    # streams the video from the loopback device
     wait_running = Channel(Process).new
     spawn do
       # ffmpeg -f v4l2 -i /dev/video4 -c:v libx264 -g 50 -f mpegts output.ts

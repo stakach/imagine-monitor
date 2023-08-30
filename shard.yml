@@ -21,3 +21,5 @@ development_dependencies:
 targets:
   monitor:
     main: src/app.cr
+  install:
+    main: src/install.cr

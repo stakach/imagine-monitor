@@ -30,6 +30,19 @@ Multicast is used so we can process the video in different ways without having t
 * docker on windows or mac will *NOT WORK* as they are virtualising linux and running in a bridged network
 * WSL on windows will also not work as you can't run kernel modules such as V4L2 loopback devices
 
+For loopback support
+
+```shell
+sudo apt-get install v4l2loopback-dkms
+
+# create two loopback devices
+sudo modprobe v4l2loopback devices=2
+
+# to configure this to persist after a reboot
+echo v4l2loopback | sudo tee -a /etc/modules-load.d/v4l2loopback.conf
+echo "options v4l2loopback devices=2" | sudo tee -a /etc/modprobe.d/v4l2loopback.conf
+```
+
 For replay support, you'll need to have setup the ramdisk unless you want to run as root
 
 ```shell
@@ -37,6 +50,13 @@ sudo mkdir -p /mnt/ramdisk
 sudo mount -t tmpfs -o size=512M tmpfs /mnt/ramdisk
 
 export REPLAY_MOUNT_PATH=/mnt/ramdisk
+
+# to configure this to persist after a reboot
+echo "tmpfs       /mnt/ramdisk   tmpfs   size=512M   0  0" | sudo tee -a /etc/fstab
+
+# can test this config with (unmount if ramdisk already mounted)
+sudo umount /mnt/ramdisk
+sudo mount -a
 ```
 
 Launch imagine monitor

@@ -91,3 +91,10 @@ if Monitor::ENABLE_REPLAY
   Monitor::REPLAY.configure_ram_drive
   Monitor::REPLAY.capture_video
 end
+
+# clean up FFMPEG processes
+at_exit do
+  Monitor::ENABLE_REPLAY.close rescue nil
+  Monitor::STREAM.close rescue nil
+  Monitor::DETECTOR.stop
+end
