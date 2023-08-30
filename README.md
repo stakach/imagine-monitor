@@ -26,6 +26,12 @@ docker buildx build --progress=plain --platform linux/arm64,linux/amd64 -t vonta
 
 Multicast is used so we can process the video in different ways without having to encode it multiple times
 
+```shell
+# enable multicast on loopback device
+ifconfig lo up
+sudo route add -net 224.0.0.0 netmask 240.0.0.0 dev lo
+```
+
 * to consume multicast video in docker you need use the host network (or the multicast source must come from another container)
 * docker on windows or mac will *NOT WORK* as they are virtualising linux and running in a bridged network
 * WSL on windows will also not work as you can't run kernel modules such as V4L2 loopback devices
