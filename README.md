@@ -74,10 +74,11 @@ export MULTICAST_ADDRESS=224.0.0.1
 export MULTICAST_PORT=1234
 
 # Enable the detection model
-export MODEL_PATH="./tf-models/mobilenet_v3_small.tflite"
+export MODEL_PATH="./tf-models/efficientdet_lite0_320_ptq.tflite"
 # Or specify a URI
-export MODEL_URI=https://raw.githubusercontent.com/google-coral/test_data/master/efficientdet_lite0_320_ptq_edgetpu.tflite
-export LABELS_URI=https://raw.githubusercontent.com/google-coral/test_data/master/coco_labels.txt
+# export MODEL_URI=https://raw.githubusercontent.com/google-coral/test_data/master/efficientdet_lite0_320_ptq_edgetpu.tflite
+# export LABELS_URI=https://raw.githubusercontent.com/google-coral/test_data/master/coco_labels.txt
+export LABELS_FILE=./tf-models/coco_labels.txt
 
 # Enable or disable certain features
 export ENABLE_STREAMING=true

@@ -20,7 +20,7 @@ class Monitor < Application
   # CORAL
   # MODEL_URI=https://raw.githubusercontent.com/google-coral/test_data/master/efficientdet_lite0_320_ptq_edgetpu.tflite
   MODEL_LOC    = ENV["MODEL_PATH"]?.presence ? Path.new(ENV["MODEL_PATH"]) : URI.parse(ENV["MODEL_URI"])
-  MODEL_LABELS = ENV["LABELS_URI"]? ? URI.parse(ENV["LABELS_URI"]) : nil
+  MODEL_LABELS = ENV["LABELS_URI"]?.presence ? URI.parse(ENV["LABELS_URI"]) : (ENV["LABELS_FILE"]? ? File.read(ENV["LABELS_FILE"]).split("\n") : nil)
   MODEL        = Imagine::Model::TFLiteImage.new(MODEL_LOC, labels: MODEL_LABELS, enable_tpu: ENABLE_EDGETPU)
   DETECTOR     = Detector.new(INPUT_DEVICE, INPUT_WIDTH, INPUT_HEIGHT, MODEL)
 

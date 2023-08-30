@@ -38,7 +38,7 @@ shards:
 
   imagine:
     git: https://github.com/stakach/imagine.git
-    version: 0.5.0+git.commit.45a664f87c1f2569fea1f8b79250776e6e7ef500
+    version: 0.5.0+git.commit.b73a5b0727205b71d1038826f79fd69c7c206c7e
 
   ipaddress:
     git: https://github.com/sija/ipaddress.cr.git
