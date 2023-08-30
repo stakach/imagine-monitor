@@ -94,7 +94,7 @@ end
 
 # clean up FFMPEG processes
 at_exit do
-  Monitor::ENABLE_REPLAY.close rescue nil
+  Monitor::REPLAY.close rescue nil
   Monitor::STREAM.close rescue nil
   Monitor::DETECTOR.stop
 end

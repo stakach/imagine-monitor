@@ -20,8 +20,12 @@ class CaptureReplay
 
   @capture_process : Process? = nil
 
-  def finalize
+  def close
     @capture_process.try &.terminate
+  end
+
+  def finalize
+    close
   end
 
   def capture_video
