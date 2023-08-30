@@ -10,6 +10,11 @@ def install_packages
 
   puts "\n → Installing required packages...".colorize(:blue)
   `apt-get install -y build-essential cmake make v4l-utils v4l2loopback-dkms ffmpeg libswscale-dev usbutils`
+  if $?.success?
+    puts " ✓ Packages installed.".colorize(:green)
+  else
+    puts " ✗ Packages may not be installed.".colorize(:red)
+  end
 end
 
 # Check if the ramdisk is configured to be mounted at startup
@@ -20,15 +25,20 @@ end
 
 # Ensure ramdisk is configured to mount at startup
 def ensure_ramdisk_config
-  unless ramdisk_configured?
+  if ramdisk_configured?
+    puts "\n ✓ Ramdisk configured to mount at startup.".colorize(:green)
+  else
+    puts "\n → Configuring ramdisk to mount at startup...".colorize(:blue)
     `mkdir -p /mnt/ramdisk`
     File.open("/etc/fstab", "a") do |file|
       file.puts "tmpfs       /mnt/ramdisk   tmpfs   size=512M   0  0"
     end
     `mount -t tmpfs -o size=512M tmpfs /mnt/ramdisk`
-    puts "\n → Configured ramdisk to mount at startup.".colorize(:blue)
-  else
-    puts "\n ✓ Ramdisk already configured to mount at startup.".colorize(:green)
+    if $?.success?
+      puts " ✓ Ramdisk configured.".colorize(:green)
+    else
+      puts " ✗ Ramdisk may not be configured.".colorize(:red)
+    end
   end
 end
 
@@ -44,7 +54,10 @@ end
 
 # Ensure loopback device is configured to run at startup with 2 devices
 def ensure_loopback_config
-  unless loopback_configured?
+  if loopback_configured?
+    puts "\n ✓ v4l2loopback configured to load at startup.".colorize(:green)
+  else
+    puts "\n → Configuring v4l2loopback to load at startup...".colorize(:blue)
     File.open(LOOPBACK_CONFIG, "w") do |file|
       file.puts "options v4l2loopback devices=2"
     end
@@ -53,9 +66,11 @@ def ensure_loopback_config
       file.puts "v4l2loopback"
     end
     `modprobe v4l2loopback devices=2`
-    puts "\n → Configured v4l2loopback to load at startup.".colorize(:blue)
-  else
-    puts "\n ✓ v4l2loopback already configured to load at startup.".colorize(:green)
+    if $?.success?
+      puts " ✓ v4l2loopback configured.".colorize(:green)
+    else
+      puts " ✗ v4l2loopback may not be configured.".colorize(:red)
+    end
   end
 end
 
