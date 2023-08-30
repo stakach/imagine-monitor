@@ -7,7 +7,7 @@ require "file"
 def install_packages
   puts "\n → Updating package lists...".colorize(:blue)
   `apt-get update`
-  
+
   puts "\n → Installing required packages...".colorize(:blue)
   `apt-get install -y v4l2loopback-dkms`
 end
