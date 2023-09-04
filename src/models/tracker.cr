@@ -31,36 +31,27 @@ class Tracker
   end
 
   def add_detection(detections : Array(Detection))
+    # Predict states for existing tracks
     @tracks.each(&.predict)
 
-    n, m = detections.size, @tracks.size
-    cost_matrix = Array.new(n) { Array.new(m) { 0.0 } }
+    mapped = detections.map do |detection|
+      # Using IoU for association, in a real-world scenario, you'd use Hungarian algorithm
+      matched_track = @tracks.empty? ? nil : @tracks.max_by { |track| iou(track.state, detection) }
 
-    detections.each_with_index do |detection, i|
-      @tracks.each_with_index do |track, j|
-        cost_matrix[i][j] = 1 - iou(track.state, detection)
-      end
-    end
-
-    assignments = Hungarian.solve(cost_matrix)
-    mapped = Array(MappedDetection).new(detections.size)
-
-    n.times do |i|
-      detection = detections[i]
-
-      if i < assignments.size && assignments[i] < m && cost_matrix[i][assignments[i]] < 0.6
-        track = @tracks[assignments[i]]
-        track.update(detection)
+      if matched_track && iou(matched_track.state, detection) > 0.5
+        matched_track.update(detection)
+        track = matched_track
       else
         x_mid = (detection.left + detection.right) / 2
-        y_mid = (detection.top + detection.top) / 2
+        y_mid = (detection.top + detection.bottom) / 2
         width = detection.right - detection.left
-        height = detection.top - detection.top
+        height = detection.bottom - detection.top
+
         track = Track.new(x_mid, y_mid, width, height)
         @tracks << track
       end
 
-      mapped << MappedDetection.new(
+      MappedDetection.new(
         detection.top, detection.left,
         detection.bottom, detection.right,
         detection.classification, detection.name,
@@ -84,7 +75,7 @@ class Tracker
     inter_right = [track_right, detection.right].min
     inter_bottom = [track_bottom, detection.bottom].min
 
-    inter_area = [0, inter_right - inter_left] .max * [0, inter_bottom - inter_top].max
+    inter_area = [0, inter_right - inter_left].max * [0, inter_bottom - inter_top].max
     union_area = (track_right - track_left) * (track_bottom - track_top) + (detection.right - detection.left) * (detection.bottom - detection.top) - inter_area
 
     inter_area / union_area
