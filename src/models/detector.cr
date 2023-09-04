@@ -1,6 +1,7 @@
 require "http"
 require "socket"
 require "imagine"
+require "./tracker"
 
 class Detector
   Log = ::App::Log.for("detector")
@@ -67,6 +68,8 @@ class Detector
     @loopback_process.try &.terminate
   end
 
+  @tracker = Tracker.new
+
   protected def start_detection
     @detector.detections do |frame, detections, fps, invoke_time|
       sockets = @socket_lock.synchronize { @sockets.dup }
@@ -78,7 +81,7 @@ class Detector
         invoke:     invoke_time.total_milliseconds,
         width:      frame.width,
         height:     frame.height,
-        detections: detections,
+        detections: @tracker.add_detection(detections),
       }.to_json
 
       # send in parallel

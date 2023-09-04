@@ -49,6 +49,23 @@
       player.play();
     }
 
+    var uuidToWebSafeColor = function(uuid) {
+        let hash = 0;
+
+        for (let i = 0; i < uuid.length; i++) {
+            hash = uuid.charCodeAt(i) + ((hash << 5) - hash);
+        }
+
+        let color = '#';
+
+        for (let i = 0; i < 3; i++) {
+            let value = (hash >> (i * 8)) & 0xFF;
+            color += ('00' + value.toString(16)).substr(-2);
+        }
+
+        return color;
+    };
+
     var video_width = 0,
         video_height = 0;
 
@@ -159,9 +176,10 @@
         var right = (pillar_box + sizes.pillar_box) + rect.left + detection.right * rect_width;
         // Create a div element for the box
         var box = document.createElement("div");
+        var colour = uuidToWebSafeColor(detection.uuid);
         // Set the box style
         box.style.position = "absolute";
-        box.style.border = "2px solid red";
+        box.style.border = "2px solid " + colour;
         box.style.top = top + "px";
         box.style.left = left + "px";
         box.style.width = (right - left) + "px";
@@ -170,8 +188,9 @@
         var label = document.createElement("span");
         // Set the label style
         label.style.position = "absolute";
-        label.style.backgroundColor = "red";
+        label.style.backgroundColor = colour;
         label.style.color = "white";
+        label.style.textShadow = "1px 1px 2px #000000";
         label.style.padding = "2px";
         label.style.bottom = "100%";
         label.style.left = "0";
