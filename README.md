@@ -71,7 +71,7 @@ Launch imagine monitor
 # What video input should be used
 # can get this list of formats: v4l2-ctl -D --list-formats-ext --device /dev/video0
 # we expect YUYV format
-export INPUT_DEVICE=/dev/video0
+export INPUT_DEVICE=/dev/video2
 export INPUT_WIDTH=640
 export INPUT_HEIGHT=480
 

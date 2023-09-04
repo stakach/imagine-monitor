@@ -1,7 +1,8 @@
 require "http"
 require "socket"
 require "imagine"
-require "./tracker"
+# require "./tracker"
+require "./tracking/hungarian_tracker"
 
 class Detector
   Log = ::App::Log.for("detector")
@@ -68,12 +69,17 @@ class Detector
     @loopback_process.try &.terminate
   end
 
-  @tracker = Tracker.new
+  # @tracker = Tracker.new
+  @tracker = Tracking::HungarianTracker.new
 
   protected def start_detection
     @detector.detections do |frame, detections, fps, invoke_time|
       sockets = @socket_lock.synchronize { @sockets.dup }
 
+
+      puts "\n\nMAPPING DETECTIONS\n\n"
+      detections = detections.map { |detect| Tracking::Detection.from_detector(detect) }
+      puts "\n\nGENERATING PAYLOAD\n\n"
       payload = {
         # provide the frame information as the NN input is a subset
         # of the full video frame
@@ -81,9 +87,10 @@ class Detector
         invoke:     invoke_time.total_milliseconds,
         width:      frame.width,
         height:     frame.height,
-        detections: @tracker.add_detection(detections),
+        # detections: @tracker.add_detection(detections),
+        detections: @tracker.update(detections),
       }.to_json
-
+      puts "\n\nSENDING PAYLOAD\n\n"
       # send in parallel
       # TODO:: use a fiber pool so we're not spawning constantly here
       sockets.each do |socket|
