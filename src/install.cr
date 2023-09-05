@@ -3,20 +3,6 @@
 require "colorize"
 require "file"
 
-# Install and update required packages
-def install_packages
-  puts "\n → Updating package lists...".colorize(:blue)
-  `apt-get update`
-
-  puts "\n → Installing required packages...".colorize(:blue)
-  `apt-get install -y build-essential cmake make v4l-utils v4l2loopback-dkms ffmpeg libswscale-dev usbutils`
-  if $?.success?
-    puts " ✓ Packages installed.".colorize(:green)
-  else
-    puts " ✗ Packages may not be installed.".colorize(:red)
-  end
-end
-
 # Check if the ramdisk is configured to be mounted at startup
 def ramdisk_configured?
   fstab_content = File.read("/etc/fstab")
@@ -74,6 +60,5 @@ def ensure_loopback_config
   end
 end
 
-install_packages
 ensure_ramdisk_config
 ensure_loopback_config
