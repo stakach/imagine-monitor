@@ -3,13 +3,30 @@
 This is the primary detection service for imagine.
 
 ```mermaid
-flowchart TD
-    B>V4L2 Input Device] --> I[[Imagine Service]]
-    I --> V[Video Stream Websocket]
-    I --> D[Detections Websocket]
-    V --> N{{Webserver}}
-    D --> N
-    U((Web browser / User)) --> N
+graph TD;
+    subgraph AI Processing
+        ProcessorManager["Processor Manager"]
+        V4L2["V4L2 AI Process"]
+        BroadcastStream["Stream AI Process"]
+    end
+    UnixPipe["Unix Pipes"]
+    Config["Config File"]
+    subgraph HTTPService["HTTP Interface"]
+        RestAPI["REST API"]
+        Websocket["Detections Websocket"]
+    end
+    Camera
+    Stream["Multicast Video Stream"]
+
+    ProcessorManager --> V4L2
+    ProcessorManager --> BroadcastStream
+    BroadcastStream --> UnixPipe
+    V4L2 --> UnixPipe
+    UnixPipe --> Websocket
+    RestAPI --> Config
+    Config --> ProcessorManager
+    Camera --> V4L2
+    Stream --> BroadcastStream
 ```
 
 It pulls video frames from video
